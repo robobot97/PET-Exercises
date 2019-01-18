@@ -52,7 +52,7 @@ def decrypt_message(K, iv, ciphertext, tag):
         plain = aes.quick_gcm_dec(K, iv, ciphertext, tag)
     except Exception as e:
         raise e
-        
+
     return plain.encode("utf8")
 
 #####################################################
@@ -85,12 +85,19 @@ def is_point_on_curve(a, b, p, x, y):
     assert (isinstance(x, Bn) and isinstance(y, Bn)) \
            or (x == None and y == None)
 
-    if x == None and y == None:
+    if x is None and y is None:
         return True
 
     lhs = (y * y) % p
     rhs = (x*x*x + a*x + b) % p
     on_curve = (lhs == rhs)
+
+    """
+    if (y*y) == (x*x*x) + (a*x) + (b % p):
+        on_curve = True
+    else:
+        on_curve = False
+    """
 
     return on_curve
 

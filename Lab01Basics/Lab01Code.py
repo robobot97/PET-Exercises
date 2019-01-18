@@ -39,6 +39,7 @@ def encrypt_message(K, message):
     plaintext = message.encode("utf8")
 
     ciphertext, tag = aes.quick_gcm_enc(K, iv, plaintext)
+
     return (iv, ciphertext, tag)
 
 def decrypt_message(K, iv, ciphertext, tag):
@@ -47,8 +48,11 @@ def decrypt_message(K, iv, ciphertext, tag):
         In case the decryption fails, throw an exception.
     """
 
-    
-
+    try:
+        plain = aes.quick_gcm_dec(K, iv, ciphertext, tag)
+    except Exception as e:
+        raise e
+        
     return plain.encode("utf8")
 
 #####################################################

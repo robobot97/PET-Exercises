@@ -92,17 +92,11 @@ def is_point_on_curve(a, b, p, x, y):
     rhs = (x*x*x + a*x + b) % p
     on_curve = (lhs == rhs)
 
-    """
-    if (y*y) == (x*x*x) + (a*x) + (b % p):
-        on_curve = True
-    else:
-        on_curve = False
-    """
-
     return on_curve
 
 
 def point_add(a, b, p, x0, y0, x1, y1):
+    from petlib.bn import Bn
     """Define the "addition" operation for 2 EC Points.
 
     Reminder: (xr, yr) = (xq, yq) + (xp, yp)
@@ -114,8 +108,35 @@ def point_add(a, b, p, x0, y0, x1, y1):
     Return the point resulting from the addition. Raises an Exception if the points are equal.
     """
 
-    # ADD YOUR CODE BELOW
+    assert is_point_on_curve(a, b, p, gx0, gy0)
+    assert is_point_on_curve(a, b, p, gx1, gy1)
+
+
     xr, yr = None, None
+
+    lam = (Bn(y0)-Bn(y1))/((Bn(x0)-Bn(x1))%Bn(p))
+    xr = Bn(Bn(lam).pow(2) - Bn(x1) - (Bn(x0) % Bn(p)))
+    yr = Bn(Bn(lam)*(Bn(x1)-Bn(xr)) - (Bn(y1) % Bn(p)))
+
+    """
+    bx0 = Bn(x0)
+    bx1 = Bn(x1)
+    by0 = Bn(y0)
+    by1 = Bn(y1)
+    bp = Bn(p)
+
+xr = (Bn(lam).pow(2) - Bn(x1) - (Bn(x0) % Bn(p))
+yr = Bn(lam)*(Bn(x1)-Bn(xr)) - (Bn(y1) % Bn(p))
+
+    lam = Bn((by0.int_sub(by1)).int_mul((bx0.int_sub(bx1)).mod_inverse(bp)))
+    xr = Bn((lam.pow(2)).int_sub(bx1).int_sub((bx0.mod(bp))))
+    yr = Bn((lam.int_mul((bx1.int_sub(xr)))).int_sub(by1.mod(bp)))
+
+
+lam = Bn((by0 - by1) * ((bx0 - bx1)^(-1))%bp)
+xr = Bn(lam^2 - bx1 - bx0%bp)
+yr = Bn(lam*(bx1 - xr) - by1%bp)
+    """
 
     return (xr, yr)
 

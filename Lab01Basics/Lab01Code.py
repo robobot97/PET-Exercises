@@ -107,12 +107,22 @@ def point_add(a, b, p, x0, y0, x1, y1):
 
     Return the point resulting from the addition. Raises an Exception if the points are equal.
     """
+# check if points are equal, if so, raise Exception
+    try:
+        if x0 != x1 and y0 != y1:
+            xr, yr = None, None
+    except Exception as e:
+        raise
 
-    assert is_point_on_curve(a, b, p, gx0, gy0)
-    assert is_point_on_curve(a, b, p, gx1, gy1)
+#check if the points even exist on the Curve:
+    if is_point_on_curve(a, b, p, gx0, gy0) == False:
+        raise Exception
+
+    if is_point_on_curve(a, b, p, gx1, gy1) == False:
+        raise Exception
 
 
-    xr, yr = None, None
+
 
     lam = (Bn(y0)-Bn(y1))/((Bn(x0)-Bn(x1))%Bn(p))
     xr = Bn(Bn(lam).pow(2) - Bn(x1) - (Bn(x0) % Bn(p)))

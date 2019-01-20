@@ -108,6 +108,13 @@ def point_add(a, b, p, x0, y0, x1, y1):
     Return the point resulting from the addition. Raises an Exception if the points are equal.
     """
 
+    # check if points are equal, if so, raise Exception
+    if x0 is x1 and y0 is y1:
+        raise Exception("EC Points must not be equal") # the string has to be an exact match, spent way too long because of this, bloody hell
+
+    #check if the points even exist on the Curve:
+    if (is_point_on_curve(a, b, p, x0, y0) == False) or (is_point_on_curve(a, b, p, x1, y1) == False):
+        return (None,None)
 
 
     #check if a point is infinity
@@ -115,48 +122,20 @@ def point_add(a, b, p, x0, y0, x1, y1):
         return (x1,y1)
     elif (x1 is None and y1 is None):
         return (x0,y0)
-
-    # check if points are equal, if so, raise Exception
-    if x0 == x1 and y0 == y1:
-        raise Exception("Points are equal")
-
-
-    try:
-        lam = ((y0.mod_sub(y1,p)).mod_mul(((x0.mod_sub(x1,p)).mod_inverse(m=p)),p)).mod(p)
-        xr = (((lam.mod_mul(lam)).mod_sub(x1)).mod_sub(x0)).mod(p)
-        yr = (lam.mod_mul(x1.mod_sub(xr,p),p)).mod_sub(y1,p)
-        print("xrts = ",xr)
-        print("yrts = ",yr)
-    except Exception as e:
-        print("xrtf = failed")
-        print("yrtf = failed")
+    elif x0 is x1:
         return (None,None)
 
+    #calculate the point addition, if it fails, something is wrong with the formula
+    try:
+        lam = (y0.mod_sub(y1,p)).mod_mul((x0.mod_sub(x1,p)).mod_inverse(m=p),p)
+        xr = lam.mod_mul(lam,p).mod_sub(x1,p).mod_sub(x0,p)
+        yr = lam.mod_mul((x1.mod_sub(xr,p)),p).mod_sub(y1,p)
+    except Exception as e:
+        raise Exception("Point Addition formula failed")
 
-    """
-    bx0 = Bn(x0)
-    bx1 = Bn(x1)
-    by0 = Bn(y0)
-    by1 = Bn(y1)
-    bp = Bn(p)
-
-xr = (Bn(lam).pow(2) - Bn(x1) - (Bn(x0) % Bn(p))
-yr = Bn(lam)*(Bn(x1)-Bn(xr)) - (Bn(y1) % Bn(p))
-
-    lam = Bn((by0.int_sub(by1)).int_mul((bx0.int_sub(bx1)).mod_inverse(bp)))
-    xr = Bn((lam.pow(2)).int_sub(bx1).int_sub((bx0.mod(bp))))
-    yr = Bn((lam.int_mul((bx1.int_sub(xr)))).int_sub(by1.mod(bp)))
-
-
-lam = Bn((by0 - by1) * ((bx0 - bx1)^(-1))%bp)
-xr = Bn(lam^2 - bx1 - bx0%bp)
-yr = Bn(lam*(bx1 - xr) - by1%bp)
-    """
-
-    print("xrf = ",xr)
-    print("yrf = ",yr)
-
-    return (xr, yr)
+    #return the beauties
+    return xr, yr
+    
 
 def point_double(a, b, p, x, y):
     """Define "doubling" an EC point.

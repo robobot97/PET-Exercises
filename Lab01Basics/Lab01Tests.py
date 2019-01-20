@@ -14,7 +14,7 @@
 
 #####################################################
 # TASK 1 -- Ensure petlib is installed on the System
-#           and also pytest. Ensure the Lab Code can 
+#           and also pytest. Ensure the Lab Code can
 #           be imported.
 
 import pytest
@@ -27,25 +27,25 @@ except:
 @pytest.mark.task1
 def test_petlib_present():
     """
-    Try to import Petlib and pytest to ensure they are 
-    present on the system, and accessible to the python 
+    Try to import Petlib and pytest to ensure they are
+    present on the system, and accessible to the python
     environment
     """
-    import petlib 
+    import petlib
     import pytest
     assert True
 
 @pytest.mark.task1
 def test_code_present():
     """
-    Try to import the code file. 
+    Try to import the code file.
     This is where the lab answers will be.
     """
     assert True
 
 
 #####################################################
-# TASK 2 -- Symmetric encryption using AES-GCM 
+# TASK 2 -- Symmetric encryption using AES-GCM
 #           (Galois Counter Mode)
 
 @pytest.mark.task2
@@ -152,6 +152,9 @@ def test_Point_addition():
     h = (r + 1) * g
     hx1, hy1 = h.get_affine()
 
+    print("hx1 = ",hx1)
+    print("hy1 = ",hy1)
+
     x, y = point_add(a, b, p, gx0, gy0, gx1, gy1)
     assert is_point_on_curve(a, b, p, x, y)
     assert x == hx1
@@ -168,7 +171,7 @@ def test_Point_addition():
     assert is_point_on_curve(a, b, p, xp, yp)
     assert xp == gx1
     assert yp == gy1
-    
+
     xp, yp = point_add(a, b, p, None, None, gx0, gy0)
     assert is_point_on_curve(a, b, p, xp, yp)
     assert gx0 == xp
@@ -278,9 +281,9 @@ def test_Point_scalar_mult_montgomerry_ladder():
 #####################################################
 # TASK 4 -- Standard ECDSA signatures
 #
-#          - Implement a key / param generation 
+#          - Implement a key / param generation
 #          - Implement ECDSA signature using petlib.ecdsa
-#          - Implement ECDSA signature verification 
+#          - Implement ECDSA signature verification
 #            using petlib.ecdsa
 
 @pytest.mark.task4

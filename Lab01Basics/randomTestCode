@@ -41,3 +41,21 @@ lam = Bn((by0 - by1) * ((bx0 - bx1)^(-1))%bp)
 xr = Bn(lam^2 - bx1 - bx0%bp)
 yr = Bn(lam*(bx1 - xr) - by1%bp)
 """
+
+
+lam = ((Bn(3).mod_mul((x.mod_mul(x,p)),p)).mod_add(a,p)).mod_mul(((Bn(2).mod_mul(y,p)).mod_inverse(m=p)),p)
+xr = (lam.mod_mul(lam,p)).mod_sub((Bn(2).mod_mul(x,p)),p)
+yr = (lam.mod_mul((x.mod_sub(xr,p)))).mod_sub(y,p)
+
+
+
+lamls = Bn(3).mod_mul(x.mod_pow(2,p),p).mod_add(a,p)
+lamrs = (Bn(2).mod_mul(y,p)).mod_inverse(p)
+lam = lamls.mod_mul(lamrs,p)
+
+xrls = lam.mod_pow(2,p)
+xrrs = Bn(2).mod_mul(x,p)
+xr = xrls.mod_sub(xrrs,p)
+
+yrmid = x.mod_sub(xr,p)
+yr = lam.mod_mul(yrmid,p).mod_sub(y,p)

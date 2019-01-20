@@ -108,6 +108,9 @@ def point_add(a, b, p, x0, y0, x1, y1):
     Return the point resulting from the addition. Raises an Exception if the points are equal.
     """
 
+    # ADD YOUR CODE BELOW
+    xr, yr = None, None
+
     # check if points are equal, if so, raise Exception
     if x0 is x1 and y0 is y1:
         raise Exception("EC Points must not be equal") # the string has to be an exact match, spent way too long because of this, bloody hell
@@ -135,7 +138,7 @@ def point_add(a, b, p, x0, y0, x1, y1):
 
     #return the beauties
     return xr, yr
-    
+
 
 def point_double(a, b, p, x, y):
     """Define "doubling" an EC point.
@@ -151,6 +154,17 @@ def point_double(a, b, p, x, y):
 
     # ADD YOUR CODE BELOW
     xr, yr = None, None
+
+    if (is_point_on_curve(a,b,p,x,y) == False):
+        return (None,None)
+
+    if (x is None) and (y is None):
+        return (None,None)
+
+
+    lam = (Bn(3).mod_mul(x.mod_pow(2,p),p).mod_add(a,p)).mod_mul(((Bn(2).mod_mul(y,p)).mod_inverse(p)),p)
+    xr = (lam.mod_pow(2,p)).mod_sub((Bn(2).mod_mul(x,p)),p)
+    yr = lam.mod_mul((x.mod_sub(xr,p)),p).mod_sub(y,p)
 
     return xr, yr
 

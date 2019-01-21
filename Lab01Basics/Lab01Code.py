@@ -181,6 +181,19 @@ def point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
         return Q
 
     """
+    """
+    ## Following algorithm was found from Wikipedia's page for 'Elliptic curve point multiplication'
+    #the below algorithm is essentially the same as above but slightly easier to understand
+
+    N <- P
+    Q <- 0
+    for i from 0 to m do
+     if di = 1 then
+        Q <- point_add(Q, N)
+     N <- point_double(N)
+     return Q
+    """
+
     Q = (None, None)
     P = (x, y)
 
@@ -211,12 +224,22 @@ def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
         return R0
 
     """
+
+    # Notation is Y = k * G. Y, G are EC points, and k is an integer
+    # Int. exponentiation becomes EC scalar multiplication
+
     R0 = (None, None)
     R1 = (x, y)
 
     for i in reversed(range(0,scalar.num_bits())):
-        pass ## ADD YOUR CODE HERE
-
+        #pass ## ADD YOUR CODE HERE
+        #similar to previous function but slight differences in terms of implementation
+        if scalar.is_bit_set(i) == 0: # bit equal to 0
+            R1 = point_add(a,b,p,R0[0],R0[1],R1[0],R1[1])
+            R0 = point_double(a,b,p,R0[0],R0[1])
+        else:
+            R0 = point_add(a,b,p,R0[0],R0[1],R1[0],R1[1])
+            R1 = point_double(a,b,p,R1[0],R1[1])
     return R0
 
 

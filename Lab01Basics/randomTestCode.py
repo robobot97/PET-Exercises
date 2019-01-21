@@ -1,3 +1,8 @@
+"""
+just a bunch of random code lines, sort of a rough notepad of potential/used code
+"""
+
+
 #check if a point is infinity
 if (x0 is None and y0 is None) or (x1 is None and y1 is None):
     raise Exception

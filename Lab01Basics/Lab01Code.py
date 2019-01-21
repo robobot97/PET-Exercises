@@ -300,7 +300,7 @@ def ecdsa_verify(G, pub_verify, message, sig):
 #           - use Bob's public key to derive a shared key.
 #           - Use Bob's public key to encrypt a message.
 #           - Use Bob's private key to decrypt the message.
-#
+# 
 # NOTE:
 
 def dh_get_key():

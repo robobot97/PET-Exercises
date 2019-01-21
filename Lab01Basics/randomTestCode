@@ -59,3 +59,5 @@ xr = xrls.mod_sub(xrrs,p)
 
 yrmid = x.mod_sub(xr,p)
 yr = lam.mod_mul(yrmid,p).mod_sub(y,p)
+
+Q = point_add(a,b,p,Q[0],Q[1],P[0],P[1])

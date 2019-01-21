@@ -186,8 +186,10 @@ def point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
     P = (x, y)
 
     for i in range(scalar.num_bits()):
-        pass ## ADD YOUR CODE HERE
-
+        #pass ## ADD YOUR CODE HERE
+        if i == 1:
+            Q = Q + P
+        P = 2 * P
     return Q
 
 def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):

@@ -96,7 +96,6 @@ def is_point_on_curve(a, b, p, x, y):
 
 
 def point_add(a, b, p, x0, y0, x1, y1):
-    from petlib.bn import Bn
     """Define the "addition" operation for 2 EC Points.
 
     Reminder: (xr, yr) = (xq, yq) + (xp, yp)
@@ -300,8 +299,25 @@ def ecdsa_verify(G, pub_verify, message, sig):
 #           - use Bob's public key to derive a shared key.
 #           - Use Bob's public key to encrypt a message.
 #           - Use Bob's private key to decrypt the message.
-# 
+#
 # NOTE:
+
+"""
+Petlib.bn, petlib.ec, petlib.cipher, and petlib.ecdsa
+
+Use the library scalar multiplication
+
+No need to encode messages into a binary format, just use Python tuples
+
+What happens if no signatures are used?
+Are you sure the designed scheme is resistant to a man in the middle?
+What happens if either Alice or Bob are forced to reveal their secrets?
+
+Signed fresh public keys (protects against coercion):
+Sender can delete private key as soon as message is encrypted.
+Receiver may delete secret as soon as message is received.
+Signatures ensure protection against man in the middle attacks.
+"""
 
 def dh_get_key():
     """ Generate a DH key pair """
@@ -318,18 +334,72 @@ def dh_encrypt(pub, message, aliceSig = None):
         - Derive a fresh shared key.
         - Use the shared key to AES_GCM encrypt the message.
         - Optionally: sign the message with Alice's key.
+
+        - pub: public key of Bob the recepient
+        - aliceSig: signature key of Alice the sender
     """
 
     ## YOUR CODE HERE
-    pass
+    #pass
 
-def dh_decrypt(priv, ciphertext, aliceVer = None):
+    # Generate a fresh DH key for this message, like in tests file
+    G,priv_dec,alicePub = dh_get_key()
+    # Derive a fresh shared key, hint: task 3
+    sharedKey = (priv_dec.pt_mul(pub))
+    # Use the shared key to AES_GCM encrypt the message, task 2 encrypt function
+    aes = Cipher("aes-128-gcm")
+    iv = urandom(16)
+    plaintext = message.encode("utf8")
+    ciphertext, tag = aes.quick_gcm_enc(sharedKey, iv, plaintext)
+    # Sign the message with Alice's key, task 4 stuff
+    if aliceSig:
+        digest = sha256(plaintext).digest()
+        try:
+            sig = do_ecdsa_sign(G, priv_dec, digest)
+        except Exception as e:
+            raise Exception("signature failed")
+    else:
+        sig = None
+
+    return (alicePub, iv, ciphertext, tag, sig)
+
+
+def dh_decrypt(G, priv, alicePub, iv, ciphertext, tag, aliceVer = None, sig = None):
     """ Decrypt a received message encrypted using your public key,
     of which the private key is provided. Optionally verify
-    the message came from Alice using her verification key."""
+    the message came from Alice using her verification key.
+
+    - priv: receipient's (Bob) secret decryption key
+    - aliceVer: a public verification key for a signature scheme
+    """
 
     ## YOUR CODE HERE
-    pass
+    #pass
+    # Get shared key for decryption
+    sharedKey = priv.pt_mul(alicePub)
+    aes = Cipher("aes-128-gcm")
+    # decrypt as in task 2
+    try:
+        plain = aes.quick_gcm_dec(sharedKey, iv, ciphertext, tag)
+    except Exception as e:
+        raise e
+
+    #verification like in task 4
+    plaintext =  ciphertext.encode("utf8")
+    digest = sha256(plaintext).digest()
+    if aliceVer and sig:
+        try:
+            # if verification returns true then great, if not, raise an exception
+            res = do_ecdsa_verify(G, alicePub, sig, digest)
+        except Exception as e:
+            raise Exception("Verification failed!")
+    else:
+        res = None
+
+
+    return plaintext,res
+
+
 
 ## NOTE: populate those (or more) tests
 #  ensure they run using the "py.test filename" command.
@@ -337,13 +407,87 @@ def dh_decrypt(priv, ciphertext, aliceVer = None):
 #  $ py.test-2.7 --cov-report html --cov Lab01Code Lab01Code.py
 
 def test_encrypt():
-    assert False
+    #basic encryption with no sign/verify mechanism
+    message = "hello world"
+    G, priv_dec, pub_enc = dh_get_key()
+    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, None)
+
+    #checks
+    ivTest = urandom(16)
+    assert len_IV(iv) is len_IV(ivTest)
+    assert len(tag) == 16
+    assert alicePub != pub_enc
+    assert alicePub != priv_dec
+
+
+    #encryption with no sign/verify mechanism
+    message = "hello world"
+    G, priv_dec, pub_enc = dh_get_key()
+    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, True)
+
+    #checks
+    ivTest = urandom(16)
+    assert len_IV(iv) is len_IV(ivTest)
+    assert len(tag) == 16
+    assert alicePub != pub_enc
+    assert alicePub != priv_dec
+    assert sig
+
+
 
 def test_decrypt():
-    assert False
+    #basic decryption with no sign/verify mechanism
+    message = "hello world"
+    G, priv_dec, pub_enc = dh_get_key()
+    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, None)
+
+    plaintext, res = dh_decrypt(G, priv_dec, alicePub, iv, ciphertext, tag, None, None)
+
+    #checks
+    assert plaintext == message
+    assert res is None
+
+
+    #decryption with sign/verify mechanism enabled
+    message = "hello world"
+    G, priv_dec, pub_enc = dh_get_key()
+    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, True)
+
+    plaintext, res = dh_decrypt(G, priv_dec, alicePub, iv, ciphertext, tag, True, sig)
+
+    #checks
+    assert plaintext == message
+    assert res
+
 
 def test_fails():
-    assert False
+    #test cases which fail for the functions above
+
+    #setting sig and aliceVer fields None during decryption even though sig enabled during encryption
+    message = "hello world"
+    G, priv_dec, pub_enc = dh_get_key()
+    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, True)
+
+    plaintext, res = dh_decrypt(G, priv_dec, alicePub, iv, ciphertext, tag, None, None)
+
+    #checks
+    assert res
+    assert plaintext
+
+
+
+    #using public key for private key parameter
+    message = "hello world"
+    G, priv_dec, pub_enc = dh_get_key()
+    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, None)
+
+    plaintext, res = dh_decrypt(G, alicePub, alicePub, iv, ciphertext, tag, None, None)
+
+    #checks
+    assert res
+    assert plaintext == message
+
+
 
 #####################################################
 # TASK 6 -- Time EC scalar multiplication

@@ -152,9 +152,6 @@ def test_Point_addition():
     h = (r + 1) * g
     hx1, hy1 = h.get_affine()
 
-    print("hx1 = ",hx1)
-    print("hy1 = ",hy1)
-
     x, y = point_add(a, b, p, gx0, gy0, gx1, gy1)
     assert is_point_on_curve(a, b, p, x, y)
     assert x == hx1

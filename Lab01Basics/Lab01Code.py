@@ -252,6 +252,7 @@ def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
 #            using petlib.ecdsa
 
 from hashlib import sha256
+# messages should be short. Use SHA256 to hash it first
 from petlib.ec import EcGroup
 from petlib.ecdsa import do_ecdsa_sign, do_ecdsa_verify
 
@@ -266,19 +267,33 @@ def ecdsa_key_gen():
 
 def ecdsa_sign(G, priv_sign, message):
     """ Sign the SHA256 digest of the message using ECDSA and return a signature """
+    # requires a secret key and a short message, and returns a "signature"
     plaintext =  message.encode("utf8")
-
     ## YOUR CODE HERE
+    # 'digest' or shorten the message using SHA256
+    digest = sha256(plaintext).digest()
+    # create a signature
+    sig = do_ecdsa_sign(G, priv_sign, digest)
 
     return sig
 
 def ecdsa_verify(G, pub_verify, message, sig):
     """ Verify the ECDSA signature on the message """
+    # requires a public key, a short message and a signature. It returns True if the signature "checks" ie. is the result of sign with the correct key
     plaintext =  message.encode("utf8")
 
     ## YOUR CODE HERE
+    # shorten the message by hashing it first using SHA256
+    digest = sha256(plaintext).digest()
+    try:
+        # if verification returns true then great, if not, raise an exception
+        res = do_ecdsa_verify(G, pub_verify, sig, digest)
+    except Exception as e:
+        raise Exception("Verification failed!")
 
+    # if all is well then returns true, indicating verification is successful
     return res
+
 
 #####################################################
 # TASK 5 -- Diffie-Hellman Key Exchange and Derivation

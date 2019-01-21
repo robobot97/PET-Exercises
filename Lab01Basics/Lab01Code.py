@@ -187,9 +187,9 @@ def point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
 
     for i in range(scalar.num_bits()):
         #pass ## ADD YOUR CODE HERE
-        if i == 1:
-            Q = Q + P
-        P = 2 * P
+        if scalar.is_bit_set(i) == 1:
+            Q = point_add(a,b,p,Q[0],Q[1],P[0],P[1])
+        P = point_double(a,b,p,P[0],P[1])
     return Q
 
 def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):

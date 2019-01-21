@@ -161,7 +161,6 @@ def point_double(a, b, p, x, y):
     if (x is None) and (y is None):
         return (None,None)
 
-
     lam = (Bn(3).mod_mul(x.mod_pow(2,p),p).mod_add(a,p)).mod_mul(((Bn(2).mod_mul(y,p)).mod_inverse(p)),p)
     xr = (lam.mod_pow(2,p)).mod_sub((Bn(2).mod_mul(x,p)),p)
     yr = lam.mod_mul((x.mod_sub(xr,p)),p).mod_sub(y,p)
@@ -187,10 +186,12 @@ def point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
 
     for i in range(scalar.num_bits()):
         #pass ## ADD YOUR CODE HERE
+        #check if ith bit in scalar is set, equal to 1
         if scalar.is_bit_set(i) == 1:
-            Q = point_add(a,b,p,Q[0],Q[1],P[0],P[1])
+            Q = point_add(a,b,p,Q[0],Q[1],P[0],P[1]) #much better than re-making the function, saved a lot of time
         P = point_double(a,b,p,P[0],P[1])
     return Q
+
 
 def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
     """

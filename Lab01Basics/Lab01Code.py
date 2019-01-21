@@ -345,7 +345,8 @@ def dh_encrypt(pub, message, aliceSig = None):
     # Generate a fresh DH key for this message, like in tests file
     G,priv_dec,alicePub = dh_get_key()
     # Derive a fresh shared key, hint: task 3
-    sharedKey = (priv_dec.pt_mul(pub))
+    sharedKey = (priv_dec*pub).export()
+    sharedKey = sha256(sharedKey).digest()
     # Use the shared key to AES_GCM encrypt the message, task 2 encrypt function
     aes = Cipher("aes-128-gcm")
     iv = urandom(16)
@@ -376,7 +377,8 @@ def dh_decrypt(G, priv, alicePub, iv, ciphertext, tag, aliceVer = None, sig = No
     ## YOUR CODE HERE
     #pass
     # Get shared key for decryption
-    sharedKey = priv.pt_mul(alicePub)
+    sharedKey = (priv*alicePub).export()
+    sharedKey = sha256(sharedKey).digest()
     aes = Cipher("aes-128-gcm")
     # decrypt as in task 2
     try:
@@ -414,7 +416,7 @@ def test_encrypt():
 
     #checks
     ivTest = urandom(16)
-    assert len_IV(iv) is len_IV(ivTest)
+    assert len(iv) is len(ivTest)
     assert len(tag) == 16
     assert alicePub != pub_enc
     assert alicePub != priv_dec
@@ -427,7 +429,7 @@ def test_encrypt():
 
     #checks
     ivTest = urandom(16)
-    assert len_IV(iv) is len_IV(ivTest)
+    assert len(iv) is len(ivTest)
     assert len(tag) == 16
     assert alicePub != pub_enc
     assert alicePub != priv_dec

@@ -133,6 +133,7 @@ def mix_client_one_hop(public_key, address, message):
     client_public_key  = private_key * G.generator()
 
     ## ADD CODE HERE
+    ##take parameters and encode message, such that the mix will output a tuple of (address, message) to be routed to its final destination.
 
     return OneHopMixMessage(client_public_key, expected_mac, address_cipher, message_cipher)
 

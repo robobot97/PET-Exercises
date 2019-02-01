@@ -409,8 +409,6 @@ def test_encrypt():
     assert len(iv) is len(ivTest)
     assert len(tag) == 16
     assert alicePub != pub_enc
-    assert alicePub != priv_dec
-
 
 
 def test_decrypt():

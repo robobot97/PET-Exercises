@@ -344,28 +344,22 @@ def dh_encrypt(pub, message, aliceSig = None):
 
     # Generate a fresh DH key for this message, like in tests file
     G,priv_dec,alicePub = dh_get_key()
-    # Derive a fresh shared key, hint: task 3
+    # Derive a fresh shared key
     sharedKey = (priv_dec*pub).export()
     sharedKey = sha256(sharedKey).digest()
+    sharedKey = sharedKey[:16]
     # Use the shared key to AES_GCM encrypt the message, task 2 encrypt function
     aes = Cipher("aes-128-gcm")
     iv = urandom(16)
     plaintext = message.encode("utf8")
     ciphertext, tag = aes.quick_gcm_enc(sharedKey, iv, plaintext)
-    # Sign the message with Alice's key, task 4 stuff
-    if aliceSig:
-        digest = sha256(plaintext).digest()
-        try:
-            sig = do_ecdsa_sign(G, priv_dec, digest)
-        except Exception as e:
-            raise Exception("signature failed")
-    else:
-        sig = None
 
-    return (alicePub, iv, ciphertext, tag, sig)
+    ciphertext = (iv,ciphertext, tag)
+
+    return (alicePub, ciphertext)
 
 
-def dh_decrypt(G, priv, alicePub, iv, ciphertext, tag, aliceVer = None, sig = None):
+def dh_decrypt(priv, ciphertext, aliceVer = None):
     """ Decrypt a received message encrypted using your public key,
     of which the private key is provided. Optionally verify
     the message came from Alice using her verification key.
@@ -377,29 +371,25 @@ def dh_decrypt(G, priv, alicePub, iv, ciphertext, tag, aliceVer = None, sig = No
     ## YOUR CODE HERE
     #pass
     # Get shared key for decryption
-    sharedKey = (priv*alicePub).export()
+    G,priv_dec,pub_enc = dh_get_key()
+
+    sharedKey = (priv*pub_enc).export()
     sharedKey = sha256(sharedKey).digest()
+    sharedKey = sharedKey[:16]
+
     aes = Cipher("aes-128-gcm")
-    # decrypt as in task 2
+
+    iv, ciphertexts, tag = ciphertext
+    enc = aes.enc(priv, iv)
+
+    # try decrypting
     try:
-        plain = aes.quick_gcm_dec(sharedKey, iv, ciphertext, tag)
+        plaintext = aes.quick_gcm_dec(sharedKey, iv, ciphertexts, tag)
     except Exception as e:
         raise e
 
-    #verification like in task 4
-    plaintext =  ciphertext.encode("utf8")
-    digest = sha256(plaintext).digest()
-    if aliceVer and sig:
-        try:
-            # if verification returns true then great, if not, raise an exception
-            res = do_ecdsa_verify(G, alicePub, sig, digest)
-        except Exception as e:
-            raise Exception("Verification failed!")
-    else:
-        res = None
 
-
-    return plaintext,res
+    return plaintext
 
 
 
@@ -412,28 +402,14 @@ def test_encrypt():
     #basic encryption with no sign/verify mechanism
     message = "hello world"
     G, priv_dec, pub_enc = dh_get_key()
-    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, None)
-
+    alicePub, ciphertext = dh_encrypt(pub_enc, message, None)
+    iv, ciphertexts, tag = ciphertext
     #checks
     ivTest = urandom(16)
     assert len(iv) is len(ivTest)
     assert len(tag) == 16
     assert alicePub != pub_enc
     assert alicePub != priv_dec
-
-
-    #encryption with no sign/verify mechanism
-    message = "hello world"
-    G, priv_dec, pub_enc = dh_get_key()
-    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, True)
-
-    #checks
-    ivTest = urandom(16)
-    assert len(iv) is len(ivTest)
-    assert len(tag) == 16
-    assert alicePub != pub_enc
-    assert alicePub != priv_dec
-    assert sig
 
 
 
@@ -441,52 +417,37 @@ def test_decrypt():
     #basic decryption with no sign/verify mechanism
     message = "hello world"
     G, priv_dec, pub_enc = dh_get_key()
-    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, None)
-
-    plaintext, res = dh_decrypt(G, priv_dec, alicePub, iv, ciphertext, tag, None, None)
-
-    #checks
-    assert plaintext == message
-    assert res is None
-
-
-    #decryption with sign/verify mechanism enabled
-    message = "hello world"
-    G, priv_dec, pub_enc = dh_get_key()
-    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, True)
-
-    plaintext, res = dh_decrypt(G, priv_dec, alicePub, iv, ciphertext, tag, True, sig)
+    alicePub, ciphertext  = dh_encrypt(pub_enc, message, None)
+    iv, ciphertexts, tag = ciphertext
+    plaintext = dh_decrypt(priv_dec, ciphertext, None)
 
     #checks
     assert plaintext == message
-    assert res
 
 
 def test_fails():
     #test cases which fail for the functions above
 
-    #setting sig and aliceVer fields None during decryption even though sig enabled during encryption
+    #setting aliceVer field as Alice's public key during decryption even though it was None during encryption
     message = "hello world"
     G, priv_dec, pub_enc = dh_get_key()
-    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, True)
+    alicePub, ciphertext= dh_encrypt(pub_enc, message, None)
+    iv, ciphertexts, tag = ciphertext
+    plaintext = dh_decrypt(priv_dec, ciphertext, alicePub)
 
-    plaintext, res = dh_decrypt(G, priv_dec, alicePub, iv, ciphertext, tag, None, None)
-
-    #checks
-    assert res
-    assert plaintext
+    #check
+    assert plaintext == message
 
 
 
     #using public key for private key parameter
     message = "hello world"
     G, priv_dec, pub_enc = dh_get_key()
-    alicePub, iv, ciphertext, tag, sig = dh_encrypt(pub_enc, message, None)
+    alicePub, iv, ciphertext, tag = dh_encrypt(pub_enc, message, None)
 
-    plaintext, res = dh_decrypt(G, alicePub, alicePub, iv, ciphertext, tag, None, None)
+    plaintext = dh_decrypt(alicePub, ciphertext, None)
 
     #checks
-    assert res
     assert plaintext == message
 
 

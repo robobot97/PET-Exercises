@@ -380,7 +380,6 @@ def dh_decrypt(priv, ciphertext, aliceVer = None):
     aes = Cipher("aes-128-gcm")
 
     iv, ciphertexts, tag = ciphertext
-    enc = aes.enc(priv, iv)
 
     # try decrypting
     try:

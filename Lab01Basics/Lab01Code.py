@@ -354,9 +354,9 @@ def dh_encrypt(pub, message, aliceSig = None):
     plaintext = message.encode("utf8")
     ciphertext, tag = aes.quick_gcm_enc(sharedKey, iv, plaintext)
 
-    ciphertext = (iv,ciphertext, tag)
+    ciphertext = (iv,ciphertext, tag, alicePub)
 
-    return (alicePub, ciphertext)
+    return (ciphertext)
 
 
 def dh_decrypt(priv, ciphertext, aliceVer = None):
@@ -373,13 +373,14 @@ def dh_decrypt(priv, ciphertext, aliceVer = None):
     # Get shared key for decryption
     G,priv_dec,pub_enc = dh_get_key()
 
-    sharedKey = (priv*pub_enc).export()
+    aes = Cipher("aes-128-gcm")
+
+    iv, ciphertexts, tag, alicePub = ciphertext
+
+    sharedKey = (priv*alicePub).export()
     sharedKey = sha256(sharedKey).digest()
     sharedKey = sharedKey[:16]
 
-    aes = Cipher("aes-128-gcm")
-
-    iv, ciphertexts, tag = ciphertext
 
     # try decrypting
     try:
@@ -401,8 +402,8 @@ def test_encrypt():
     #basic encryption with no sign/verify mechanism
     message = "hello world"
     G, priv_dec, pub_enc = dh_get_key()
-    alicePub, ciphertext = dh_encrypt(pub_enc, message, None)
-    iv, ciphertexts, tag = ciphertext
+    ciphertext = dh_encrypt(pub_enc, message, None)
+    iv, ciphertexts, tag, alicePub = ciphertext
     #checks
     ivTest = urandom(16)
     assert len(iv) is len(ivTest)
@@ -414,8 +415,8 @@ def test_decrypt():
     #basic decryption with no sign/verify mechanism
     message = "hello world"
     G, priv_dec, pub_enc = dh_get_key()
-    alicePub, ciphertext  = dh_encrypt(pub_enc, message, None)
-    iv, ciphertexts, tag = ciphertext
+    ciphertext  = dh_encrypt(pub_enc, message, None)
+    iv, ciphertexts, tag, alicePub = ciphertext
     plaintext = dh_decrypt(priv_dec, ciphertext, None)
 
     #checks
@@ -428,9 +429,9 @@ def test_fails():
     #setting aliceVer field as Alice's public key during decryption even though it was None during encryption
     message = "hello world"
     G, priv_dec, pub_enc = dh_get_key()
-    alicePub, ciphertext= dh_encrypt(pub_enc, message, None)
-    iv, ciphertexts, tag = ciphertext
-    plaintext = dh_decrypt(priv_dec, ciphertext, alicePub)
+    ciphertext= dh_encrypt(pub_enc, message, None)
+    iv, ciphertexts, tag, alicePub = ciphertext
+    plaintext = dh_decrypt(priv_dec, ciphertext, None)
 
     #check
     assert plaintext == message

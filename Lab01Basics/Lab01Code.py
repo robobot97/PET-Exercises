@@ -370,11 +370,7 @@ def dh_decrypt(priv, ciphertext, aliceVer = None):
 
     ## YOUR CODE HERE
     #pass
-    # Get shared key for decryption
-    G,priv_dec,pub_enc = dh_get_key()
-
     aes = Cipher("aes-128-gcm")
-
     iv, ciphertexts, tag, alicePub = ciphertext
 
     sharedKey = (priv*alicePub).export()
@@ -426,24 +422,12 @@ def test_decrypt():
 def test_fails():
     #test cases which fail for the functions above
 
-    #setting aliceVer field as Alice's public key during decryption even though it was None during encryption
-    message = "hello world"
-    G, priv_dec, pub_enc = dh_get_key()
-    ciphertext= dh_encrypt(pub_enc, message, None)
-    iv, ciphertexts, tag, alicePub = ciphertext
-    plaintext = dh_decrypt(priv_dec, ciphertext, None)
-
-    #check
-    assert plaintext == message
-
-
-
     #using public key for private key parameter
     message = "hello world"
     G, priv_dec, pub_enc = dh_get_key()
-    alicePub, iv, ciphertext, tag = dh_encrypt(pub_enc, message, None)
-
-    plaintext = dh_decrypt(alicePub, ciphertext, None)
+    ciphertext = dh_encrypt(pub_enc, message, None)
+    iv, ciphertexts, tag, alicePub = ciphertext
+    plaintext = dh_decrypt(pub_enc, ciphertext, None)
 
     #checks
     assert plaintext == message

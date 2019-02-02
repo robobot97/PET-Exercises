@@ -281,6 +281,7 @@ def mix_client_n_hop(public_keys, address, message):
     client_public_key  = private_key * G.generator()
 
     ## ADD CODE HERE
+    #similar to task 2 but more steps involved and conditional statements
 
     return NHopMixMessage(client_public_key, hmacs, address_cipher, message_cipher)
 

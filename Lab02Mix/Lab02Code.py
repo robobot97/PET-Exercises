@@ -235,6 +235,7 @@ def mix_server_n_hop(private_key, message_list, final=False):
             iv = pack("H14s", i, b"\x00"*14)
 
             hmac_plaintext = aes_ctr_enc_dec(hmac_key, iv, other_mac)
+            hmac_plaintext = hmac_plaintext[:20]
             new_hmacs += [hmac_plaintext]
 
         # Decrypt address & message
@@ -296,7 +297,7 @@ def mix_client_n_hop(public_keys, address, message):
 
     h = Hmac(b"sha512", hmac_key)
 
-    for other_mac in public_keys[1:]:
+    for other_publics in public_keys[1:]:
         h.update(other_mac)
 
     h.update(address_cipher)

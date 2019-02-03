@@ -282,6 +282,45 @@ def mix_client_n_hop(public_keys, address, message):
 
     ## ADD CODE HERE
     #similar to task 2 but more steps involved and conditional statements
+    shared_element = private_key*public_keys[0]
+    key_material = sha512(shared_element.export()).digest()
+
+    hmac_key = key_material[:16]
+    address_key = key_material[16:32]
+    message_key = key_material[32:48]
+
+    iv = b"\x00"*16
+
+    address_cipher = aes_ctr_enc_dec(address_key, iv, address_plaintext)
+    message_cipher = aes_ctr_enc_dec(message_key, iv, message_plaintext)
+
+    h = Hmac(b"sha512", hmac_key)
+
+    for other_mac in public_keys[1:]:
+        h.update(other_mac)
+
+    h.update(address_cipher)
+    h.update(message_cipher)
+    expected_mac = h.digest()
+    expected_mac = expected_mac[:20]
+
+    hmacs = []
+    new_hmacs = []
+    hmacs += expected_mac
+
+    for i, other_mac in enumerate(public_keys[1:]):
+        # Ensure the IV is different for each hmac
+        iv = pack("H14s", i, b"\x00"*14)
+
+        shared_element = private_key*public_keys[i+1]
+        key_material = sha512(shared_element.export()).digest()
+
+        hmac_key = key_material[:16]
+
+        hmac_plaintext = aes_ctr_enc_dec(hmac_key, iv, other_mac)
+        new_hmacs += [hmac_plaintext]
+
+    hmacs += new_hmacs
 
     return NHopMixMessage(client_public_key, hmacs, address_cipher, message_cipher)
 

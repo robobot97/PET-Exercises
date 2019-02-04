@@ -423,11 +423,34 @@ def analyze_trace(trace, target_number_of_friends, target=0):
 ## TASK Q1 (Question 1): The mix packet format you worked on uses AES-CTR with an IV set to all zeros.
 #                        Explain whether this is a security concern and justify your answer.
 
-""" TODO: Your answer HERE """
+""" TODO: Your answer HERE
+AES-CTR uses IV-Counter pairs which are encrypted and then used with the plaintext to create cyphertext.
+The IV is essentially suppposed to be a nonce. Hence, it should be an unpredicatable, one-time value.
+Therefore, an IV set to all zeroes in real-life would pose a significant security concern, especially if it is not uniquely and randomly generated for each block.
+For exmaple, comprimising a full-disk encryption mechanism. However, in this case, because the encryption key is generated each time a message is encrypted an IV
+with all zeroes is not a security concern. Additionally, since each message has its own seemingly random shared key the security of the encryption is fine.
+Although, in general, IV should always be altered and random.
+"""
 
 
 ## TASK Q2 (Question 2): What assumptions does your implementation of the Statistical Disclosure Attack
 #                        makes about the distribution of traffic from non-target senders to receivers? Is
 #                        the correctness of the result returned dependent on this background distribution?
 
-""" TODO: Your answer HERE """
+""" TODO: Your answer HERE
+The assumptions made while implementing the Statistical Disclosure attack about the distribution of traffic from non-target senders
+to receivers are as follows:
+    o Non-target senders are not going to be sending messages to the target's friends/receivers, such that any messaged received by the target's friends'
+    are always from the target. This could affect the correctness of the result returned, because, a receiver frequently receiving messages will be deemed the target's friend,
+    even if, for example, the receiver was just receiving heavy traffic from a non-target sender.
+    o Additionally, it is assumed that the frequency of messages received by non-targets' friends/receivers is lower than the frequency of messages received
+    by the target's friends/receivers. This means that the target senders' friends are those with the highest frequency. This can greatly affect the correctness of the results,
+    because it is likely that the target sender will send fewer and more compact messages to their friends in order to avoid generating too much attention. Hence, skewing
+    the results received.
+    o Furthermore, it is assumed that there is no or very little latency, since we assume that the senders only interact with the receivers in the same round, and vice versa.
+    Since, real systems tend to have unexpected latency issues and there is also a possibility of mixing mechanisms, it is possible that the messages sent by the target sender
+    actually reach the receiver some rounds later, maybe even in a round where the target sender is not listed in the senders list. Thus, potentially, missing a target's actual receivers
+    and returning an incorrect list of most likely friends.
+    o We also assume that the receivers are genuine end users and not a redirecting service such as a VPN. Again, affecting the correctness, as the actual targets friends
+    are likely still hidden.
+"""

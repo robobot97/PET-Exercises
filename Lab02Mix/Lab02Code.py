@@ -230,6 +230,10 @@ def mix_server_n_hop(private_key, message_list, final=False):
         expected_mac = h.digest()
 
         if not secure_compare(msg.hmacs[0], expected_mac[:20]):
+            #print("msg.hmacs[0]:", msg.hmacs[0])
+            #print("expected_mac[:20]:", expected_mac[:20])
+            #print("msg.hmacs:", msg.hmacs)
+            #print("expected_mac:", expected_mac)
             raise Exception("HMAC check failure")
 
         ## Decrypt the hmacs, address and the message
@@ -255,6 +259,8 @@ def mix_server_n_hop(private_key, message_list, final=False):
             # Decode the address and message
             address_len, address_full = unpack("!H256s", address_plaintext)
             message_len, message_full = unpack("!H1000s", message_plaintext)
+            #print("adddec:", address_full)
+            #print("mesdec:", message_full)
 
             out_msg = (address_full[:address_len], message_full[:message_len])
             out_queue += [out_msg]
@@ -283,6 +289,8 @@ def mix_client_n_hop(public_keys, address, message):
     # use those encoded values as the payload you encrypt!
     address_plaintext = pack("!H256s", len(address), address)
     message_plaintext = pack("!H1000s", len(message), message)
+    #print("add:",address)
+    #print("mes:",message)
 
     ## Generate a fresh public key
     private_key = G.order().random()
@@ -291,60 +299,86 @@ def mix_client_n_hop(public_keys, address, message):
     ## ADD CODE HERE
     #similar to task 2 but more steps involved and conditional statements
 
-    #generate blinded public keys list, but only blind entries after the first key
+    #generate blinded public keys list, first entry is just the first public key
     public_keys_blinded = [public_keys[0]]
-    for i in range(1,len(public_keys)-1):
-        shared_element = private_key * public_keys_blinded[len(public_keys_blinded)-1]
-        key_material = sha512(shared_element.export()).digest()
+    #generate shared key for later use
+    shared_element = private_key * public_keys[0]
+    key_material = sha512(shared_element.export()).digest()
 
-        hmac_key = key_material[:16]
-        address_key = key_material[16:32]
-        message_key = key_material[32:48]
-        #generate a blinding factor to create unlinkability between public keys
+    #if n > 1, hence if there are multiple hops, then:
+    if (len(public_keys) > 1):
+        #generate and initialise a blinding factor to create unlinkability between public keys
         blinding_factor = Bn.from_binary(key_material[48:])
         #blind the public key
-        new_ec_public_key = blinding_factor * public_keys[i]
-        #store the blinded public key into the list
-        public_keys_blinded.append(new_ec_public_key)
+        new_ec_public_key = blinding_factor * public_keys[1]
+        #insert the blinded public key to the start of the list, so encryption takes place in a FILO sequence
+        public_keys_blinded.insert(0,new_ec_public_key)
+
+        #repeat the steps above for any remaining unblinded public keys:
+        if (len(public_keys) > 2):
+            for i,publk in enumerate(public_keys[2:]):
+                #print("public_keys_blinded:", public_keys_blinded)
+                #print("i", i)
+                #print("pub:",len(public_keys))
+                #generate shared key
+                shared_element = private_key * public_keys_blinded[0]
+                key_material = sha512(shared_element.export()).digest()
+                #update blinding factor for the next key
+                blinding_factor = Bn.from_binary(key_material[48:]) * blinding_factor
+                #blind the key
+                new_ec_public_key = blinding_factor * publk
+                #store the blinded public key into the list, at the start of list
+                public_keys_blinded.insert(0,new_ec_public_key)
 
 
-    #when encrypting, the blinded public keys usage should start from the the last entry, working to the first entry to ensure correct order while decrypting
-    #reverse the order of the blinded public keys
-    reversed_public_keys_blinded = list(reversed(public_keys_blinded))
+    #when encrypting, the blinded public keys should be processed in an inverse order to the normal public keys,
+    #from the the last entry, working to the first entry to ensure correct order for decryption
+    #don't need to reverse the order of the blinded public keys anymore, since they were inserted appropriately
+
+    #reversed_public_keys_blinded = (reversed(public_keys_blinded))
+    #print("reversed:", reversed_public_keys_blinded)
+
+    #initialise final hmacs list to be returned
     hmacs = []
     #initialise the address and message ciphertext variables for the interations later
     address_cipher = 0
     message_cipher = 0
 
     # using each element in the list, i.e. each key:
-    for i, public_key_rb in enumerate(reversed_public_keys_blinded):
+    for i, public_key_rb in enumerate(public_keys_blinded):
         #generate shared key
         shared_element = private_key * public_key_rb
         key_material = sha512(shared_element.export()).digest()
-
+        #initisalise key variables
         hmac_key = key_material[:16]
         address_key = key_material[16:32]
         message_key = key_material[32:48]
-
+        #set IV to benotep 16 zeros
         iv = b"\x00"*16
         #if not first round then keep iterating over the ciphertexts, else use plaintext to create the ciphertexts
-        if (address_cipher is not 0 and message_cipher is not 0):
+        if (address_cipher != 0 and message_cipher != 0):
+            #encrypting the address and message using the previous ciphertext
             address_cipher = aes_ctr_enc_dec(address_key, iv, address_cipher)
             message_cipher = aes_ctr_enc_dec(message_key, iv, message_cipher)
         else:
+            #encrypting the address and message using the plaintext
             address_cipher = aes_ctr_enc_dec(address_key, iv, address_plaintext)
             message_cipher = aes_ctr_enc_dec(message_key, iv, message_plaintext)
 
-        #aes = Cipher("AES-128-CTR")
+        aes = Cipher("AES-128-CTR")
         #create the HMAC
         h = Hmac(b"sha512", hmac_key)
+        #encrypting HMACS:
         new_hmacs = []
         #for each HMAC in the final list:
         for j, other_mac in enumerate(hmacs):
             # Ensure the IV is different for each HMAC
-            iv = pack("H14s", i, b"\x00"*14)
-            #encrypt the HMAC
+            iv = pack("H14s", j, b"\x00"*14)
+            #encrypt the HMAC, taken directly from decrypting function above
             hmac_plaintext = aes_ctr_enc_dec(hmac_key, iv, other_mac)
+            hmac_plaintext = hmac_plaintext[:20]
+            #store the encrypted hmac into the list used to return all hmacs
+            new_hmacs += [hmac_plaintext]
             #append the encrypted HMAC to the HMAC created above
             h.update(hmac_plaintext)
         #append the address and message ciphertexts to the HMAC
@@ -353,8 +387,13 @@ def mix_client_n_hop(public_keys, address, message):
         #format the HMAC to make sure it can be processed by the decoding function properly
         expected_mac = h.digest()
         expected_mac = expected_mac[:20]
-        #insert the formatted HMAC into the final list of HMACS
-        hmacs.insert(0,expected_mac)
+        #insert the formatted HMAC covering the ciphertexts into the final list of HMACS,
+        #at the start of the list because this gets checked first in the decryption function
+        new_hmacs.insert(0, expected_mac)
+        #set the return variable of all HMACS to the complete list HMACS 
+        hmacs = new_hmacs
+
+    #print("hmacs:", hmacs)
 
     return NHopMixMessage(client_public_key, hmacs, address_cipher, message_cipher)
 

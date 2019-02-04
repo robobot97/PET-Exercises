@@ -134,18 +134,25 @@ def mix_client_one_hop(public_key, address, message):
 
     ## ADD CODE HERE
     ##take parameters and encode message, such that the mix will output a tuple of (address, message) to be routed to its final destination.
+    #essentially reverse the decoder function above
+
+    #derive a shared key
     shared_element = private_key*public_key
     key_material = sha512(shared_element.export()).digest()
 
+    #use the correct part of the key for the HMAC and encrypting the address and message
     hmac_key = key_material[:16]
     address_key = key_material[16:32]
     message_key = key_material[32:48]
 
+    #generate an IV of 16 zeros.
     iv = b"\x00"*16
 
+    #encrypt the address and message
     address_cipher = aes_ctr_enc_dec(address_key, iv, address_plaintext)
     message_cipher = aes_ctr_enc_dec(message_key, iv, message_plaintext)
 
+    #create the HMAC
     h = Hmac(b"sha512", hmac_key)
     h.update(address_cipher)
     h.update(message_cipher)
@@ -223,9 +230,6 @@ def mix_server_n_hop(private_key, message_list, final=False):
         expected_mac = h.digest()
 
         if not secure_compare(msg.hmacs[0], expected_mac[:20]):
-            print("0:",msg.hmacs)
-            print("exp:",expected_mac[:20])
-            print("last:",msg.hmacs[-1])
             raise Exception("HMAC check failure")
 
         ## Decrypt the hmacs, address and the message
@@ -287,31 +291,34 @@ def mix_client_n_hop(public_keys, address, message):
     ## ADD CODE HERE
     #similar to task 2 but more steps involved and conditional statements
 
-    #generate blinded public keys list
+    #generate blinded public keys list, but only blind entries after the first key
     public_keys_blinded = [public_keys[0]]
-
-    for i in range(1,len(public_keys)):
+    for i in range(1,len(public_keys)-1):
         shared_element = private_key * public_keys_blinded[len(public_keys_blinded)-1]
         key_material = sha512(shared_element.export()).digest()
 
         hmac_key = key_material[:16]
         address_key = key_material[16:32]
         message_key = key_material[32:48]
-
+        #generate a blinding factor to create unlinkability between public keys
         blinding_factor = Bn.from_binary(key_material[48:])
+        #blind the public key
         new_ec_public_key = blinding_factor * public_keys[i]
+        #store the blinded public key into the list
         public_keys_blinded.append(new_ec_public_key)
 
 
     #when encrypting, the blinded public keys usage should start from the the last entry, working to the first entry to ensure correct order while decrypting
+    #reverse the order of the blinded public keys
     reversed_public_keys_blinded = list(reversed(public_keys_blinded))
     hmacs = []
-
+    #initialise the address and message ciphertext variables for the interations later
     address_cipher = 0
     message_cipher = 0
 
+    # using each element in the list, i.e. each key:
     for i, public_key_rb in enumerate(reversed_public_keys_blinded):
-
+        #generate shared key
         shared_element = private_key * public_key_rb
         key_material = sha512(shared_element.export()).digest()
 
@@ -320,7 +327,7 @@ def mix_client_n_hop(public_keys, address, message):
         message_key = key_material[32:48]
 
         iv = b"\x00"*16
-
+        #if not first round then keep iterating over the ciphertexts, else use plaintext to create the ciphertexts
         if (address_cipher is not 0 and message_cipher is not 0):
             address_cipher = aes_ctr_enc_dec(address_key, iv, address_cipher)
             message_cipher = aes_ctr_enc_dec(message_key, iv, message_cipher)
@@ -329,21 +336,24 @@ def mix_client_n_hop(public_keys, address, message):
             message_cipher = aes_ctr_enc_dec(message_key, iv, message_plaintext)
 
         #aes = Cipher("AES-128-CTR")
-
+        #create the HMAC
         h = Hmac(b"sha512", hmac_key)
         new_hmacs = []
+        #for each HMAC in the final list:
         for j, other_mac in enumerate(hmacs):
-            # Ensure the IV is different for each hmac
+            # Ensure the IV is different for each HMAC
             iv = pack("H14s", i, b"\x00"*14)
+            #encrypt the HMAC
             hmac_plaintext = aes_ctr_enc_dec(hmac_key, iv, other_mac)
+            #append the encrypted HMAC to the HMAC created above
             h.update(hmac_plaintext)
-
+        #append the address and message ciphertexts to the HMAC
         h.update(address_cipher)
         h.update(message_cipher)
-
+        #format the HMAC to make sure it can be processed by the decoding function properly
         expected_mac = h.digest()
         expected_mac = expected_mac[:20]
-
+        #insert the formatted HMAC into the final list of HMACS
         hmacs.insert(0,expected_mac)
 
     return NHopMixMessage(client_public_key, hmacs, address_cipher, message_cipher)
@@ -404,20 +414,28 @@ def analyze_trace(trace, target_number_of_friends, target=0):
     print("trace101",trace[1][0][1])
     print("no.senders",len(trace[1][0][:]))
     """
+    #create a counter object using Python's built-in functions
     countlist = Counter()
+    #for each round of communication:
     for i in range(0,len(trace)):
+        #if the target sender id is present in the senders list then:
         if (target in trace[i][0][:]):
+            #count the occurance of each unique receiver id and concatenate into an overall id-frequency object list
             countlist += Counter(trace[i][1][:])
+
     #print("clist:", countlist)
 
     #print("mostcommon:", countlist.most_common(target_number_of_friends))
     #print("mostcommon:", (countlist.most_common(target_number_of_friends)[0][0]))
 
+    #initialise empty list
     friends = []
+    #until you obtain the same number of receivers as the number of friends the target has:
     for i in range(0, target_number_of_friends):
+        #keep appending the most common (highest frequency) receiver id in a descending order from most to least likely 'friend'
         friends.append((countlist.most_common(target_number_of_friends)[i][0]))
     #print("friends list:", friends)
-
+    #return list of most likely friends the target has been sending messages to
     return friends
 
 ## TASK Q1 (Question 1): The mix packet format you worked on uses AES-CTR with an IV set to all zeros.
@@ -426,9 +444,9 @@ def analyze_trace(trace, target_number_of_friends, target=0):
 """ TODO: Your answer HERE
 AES-CTR uses IV-Counter pairs which are encrypted and then used with the plaintext to create cyphertext.
 The IV is essentially suppposed to be a nonce. Hence, it should be an unpredicatable, one-time value.
-Therefore, an IV set to all zeroes in real-life would pose a significant security concern, especially if it is not uniquely and randomly generated for each block.
+Therefore, an IV set to all zeros in real-life would pose a significant security concern, especially if it is not uniquely and randomly generated for each block.
 For exmaple, comprimising a full-disk encryption mechanism. However, in this case, because the encryption key is generated each time a message is encrypted an IV
-with all zeroes is not a security concern. Additionally, since each message has its own seemingly random shared key the security of the encryption is fine.
+with all zeros is not a security concern. Additionally, since each message has its own seemingly random shared key the security of the encryption is fine.
 Although, in general, IV should always be altered and random.
 """
 

@@ -395,8 +395,30 @@ def analyze_trace(trace, target_number_of_friends, target=0):
     """
 
     ## ADD CODE HERE
+    """
+    print("no.rounds:", len(trace))
+    print("no:", target_number_of_friends)
+    print("target:", target)
+    print("trace1",trace[1])
+    print("trace10",trace[1][0])
+    print("trace101",trace[1][0][1])
+    print("no.senders",len(trace[1][0][:]))
+    """
+    countlist = Counter()
+    for i in range(0,len(trace)):
+        if (target in trace[i][0][:]):
+            countlist += Counter(trace[i][1][:])
+    #print("clist:", countlist)
 
-    return []
+    #print("mostcommon:", countlist.most_common(target_number_of_friends))
+    #print("mostcommon:", (countlist.most_common(target_number_of_friends)[0][0]))
+
+    friends = []
+    for i in range(0, target_number_of_friends):
+        friends.append((countlist.most_common(target_number_of_friends)[i][0]))
+    #print("friends list:", friends)
+
+    return friends
 
 ## TASK Q1 (Question 1): The mix packet format you worked on uses AES-CTR with an IV set to all zeros.
 #                        Explain whether this is a security concern and justify your answer.

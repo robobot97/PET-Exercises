@@ -30,8 +30,15 @@ def setup():
 def keyGen(params):
    """ Generate a private / public key pair """
    (G, g, h, o) = params
-   
+
    # ADD CODE HERE
+   """
+   Public: g, h (and group parameters)
+   Key generation: generate a random “x” (0 < x < order of the group);
+   Private key is “x”, public key is pk= g^x
+   """
+
+
 
    return (priv, pub)
 
@@ -41,6 +48,8 @@ def encrypt(params, pub, m):
         raise Exception("Message value to low or high.")
 
    # ADD CODE HERE
+   """Encryption of m with pk:random k; E(m; k) = (g^k, g^(xk)*h^m)"""
+
 
     return c
 
@@ -76,37 +85,49 @@ def decrypt(params, priv, ciphertext):
     a , b = ciphertext
 
    # ADD CODE HERE
+   """Decryption of (a,b) with x: m = logh(b*(a^x)^(-1)) (= logh((g^(xk)h^m)/(g^(xk))))"""
+
+
 
     return logh(params, hm)
 
 #####################################################
 # TASK 2 -- Define homomorphic addition and
 #           multiplication with a public value
-# 
+#
 
 def add(params, pub, c1, c2):
-    """ Given two ciphertexts compute the ciphertext of the 
+    """ Given two ciphertexts compute the ciphertext of the
         sum of their plaintexts.
     """
     assert isCiphertext(params, c1)
     assert isCiphertext(params, c2)
 
    # ADD CODE HERE
+   """
+   Addition of E(m0;k0) = (a0, b0) and E(m1; k1) = (a1, b1)
+   E(m0+m1; k0+k1) = (a0a1, b0b1)
+        = (g^(k0)g^(k1), g^(xk0)h^(m0)g^(xk1)h^(m1)) = (g^(k0+k1), g^(x(k0+k1))h^(m0+m1))
+   """
 
     return c3
 
 def mul(params, pub, c1, alpha):
-    """ Given a ciphertext compute the ciphertext of the 
+    """ Given a ciphertext compute the ciphertext of the
         product of the plaintext time alpha """
     assert isCiphertext(params, c1)
 
    # ADD CODE HERE
+   """
+   Multiplication of E(m0; k0) = (a0, b0) with a constant c:
+   E(cm0; ck0) = ((a0)^c, (b0)^c)
+   """
 
     return c3
 
 #####################################################
 # TASK 3 -- Define Group key derivation & Threshold
-#           decryption. Assume an honest but curious 
+#           decryption. Assume an honest but curious
 #           set of authorities.
 
 def groupKey(params, pubKeys=[]):
@@ -114,15 +135,21 @@ def groupKey(params, pubKeys=[]):
     (G, g, h, o) = params
 
    # ADD CODE HERE
+   """
+   Private keys: x1, ..., xn
+   Public key: g^(x1+...+xn)
+   """
 
     return pub
 
 def partialDecrypt(params, priv, ciphertext, final=False):
-    """ Given a ciphertext and a private key, perform partial decryption. 
+    """ Given a ciphertext and a private key, perform partial decryption.
         If final is True, then return the plaintext. """
     assert isCiphertext(params, ciphertext)
-    
+
     # ADD CODE HERE
+    """Decryption of (a,b): m = b / a^x1 / a^x2 / ... / a^xn"""
+    
 
     if final:
         return logh(params, b1)
@@ -135,14 +162,19 @@ def partialDecrypt(params, priv, ciphertext, final=False):
 #
 
 def corruptPubKey(params, priv, OtherPubKeys=[]):
-    """ Simulate the operation of a corrupt decryption authority. 
+    """ Simulate the operation of a corrupt decryption authority.
         Given a set of public keys from other authorities return a
         public key for the corrupt authority that leads to a group
         public key corresponding to a private key known to the
         corrupt authority. """
     (G, g, h, o) = params
-    
+
    # ADD CODE HERE
+   """Attack: A malicious party can simply ask the threshold decryption parties
+   to decrypt a secret, not the output of the computation!
+   (Trade name: a decryption oracle attack)
+   """
+
 
     return pub
 
@@ -165,7 +197,7 @@ def process_votes(params, pub, encrypted_votes):
     """ Given a list of encrypted votes tally them
         to sum votes for zeros and votes for ones. """
     assert isinstance(encrypted_votes, list)
-    
+
    # ADD CODE HERE
 
     return tv0, tv1
@@ -206,7 +238,7 @@ def simulate_poll(votes):
 ###########################################################
 # TASK Q1 -- Answer questions regarding your implementation
 #
-# Consider the following game between an adversary A and honest users H1 and H2: 
+# Consider the following game between an adversary A and honest users H1 and H2:
 # 1) H1 picks 3 plaintext integers Pa, Pb, Pc arbitrarily, and encrypts them to the public
 #    key of H2 using the scheme you defined in TASK 1.
 # 2) H1 provides the ciphertexts Ca, Cb and Cc to H2 who flips a fair coin b.
@@ -214,7 +246,7 @@ def simulate_poll(votes):
 #    In case b=1 then H2 homomorphically computes C as the encryption of Pb plus Pc.
 # 3) H2 provides the adversary A, with Ca, Cb, Cc and C.
 #
-# What is the advantage of the adversary in guessing b given your implementation of 
+# What is the advantage of the adversary in guessing b given your implementation of
 # Homomorphic addition? What are the security implications of this?
 
 """ Your Answer here """
@@ -224,8 +256,8 @@ def simulate_poll(votes):
 #
 # Given your implementation of the private poll in TASK 5, how
 # would a malicious user implement encode_vote to (a) distrupt the
-# poll so that it yields no result, or (b) manipulate the poll so 
-# that it yields an arbitrary result. Can those malicious actions 
+# poll so that it yields no result, or (b) manipulate the poll so
+# that it yields an arbitrary result. Can those malicious actions
 # be detected given your implementation?
 
 """ Your Answer here """

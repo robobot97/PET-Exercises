@@ -34,11 +34,13 @@ def keyGen(params):
    # ADD CODE HERE
    """
    Public: g, h (and group parameters)
-   Key generation: generate a random “x” (0 < x < order of the group);
-   Private key is “x”, public key is pk= g^x
+   Key generation: generate a random "x" (0 < x < order of the group);
+   Private key is "x", public key is pk= g^x
    """
 
-
+   from random import randint
+   priv = randint(0,G.order())
+   pub = g**priv
 
    return (priv, pub)
 
@@ -48,8 +50,12 @@ def encrypt(params, pub, m):
         raise Exception("Message value to low or high.")
 
    # ADD CODE HERE
-   """Encryption of m with pk:random k; E(m; k) = (g^k, g^(xk)*h^m)"""
+    """ Encryption of m with pk:random k; E(m; k) = (g^k, g^(xk)*h^m) """
 
+    (G, g, h, o) = params
+    from random import randint
+    k = randint()
+    
 
     return c
 
@@ -85,7 +91,7 @@ def decrypt(params, priv, ciphertext):
     a , b = ciphertext
 
    # ADD CODE HERE
-   """Decryption of (a,b) with x: m = logh(b*(a^x)^(-1)) (= logh((g^(xk)h^m)/(g^(xk))))"""
+    """ Decryption of (a,b) with x: m = logh(b*(a^x)^(-1)) (= logh((g^(xk)h^m)/(g^(xk)))) """
 
 
 
@@ -104,11 +110,11 @@ def add(params, pub, c1, c2):
     assert isCiphertext(params, c2)
 
    # ADD CODE HERE
-   """
+    """
    Addition of E(m0;k0) = (a0, b0) and E(m1; k1) = (a1, b1)
    E(m0+m1; k0+k1) = (a0a1, b0b1)
         = (g^(k0)g^(k1), g^(xk0)h^(m0)g^(xk1)h^(m1)) = (g^(k0+k1), g^(x(k0+k1))h^(m0+m1))
-   """
+    """
 
     return c3
 
@@ -118,10 +124,10 @@ def mul(params, pub, c1, alpha):
     assert isCiphertext(params, c1)
 
    # ADD CODE HERE
-   """
+    """
    Multiplication of E(m0; k0) = (a0, b0) with a constant c:
    E(cm0; ck0) = ((a0)^c, (b0)^c)
-   """
+    """
 
     return c3
 
@@ -135,10 +141,10 @@ def groupKey(params, pubKeys=[]):
     (G, g, h, o) = params
 
    # ADD CODE HERE
-   """
+    """
    Private keys: x1, ..., xn
    Public key: g^(x1+...+xn)
-   """
+    """
 
     return pub
 
@@ -148,8 +154,8 @@ def partialDecrypt(params, priv, ciphertext, final=False):
     assert isCiphertext(params, ciphertext)
 
     # ADD CODE HERE
-    """Decryption of (a,b): m = b / a^x1 / a^x2 / ... / a^xn"""
-    
+    """ Decryption of (a,b): m = b / a^x1 / a^x2 / ... / a^xn """
+
 
     if final:
         return logh(params, b1)
@@ -170,10 +176,10 @@ def corruptPubKey(params, priv, OtherPubKeys=[]):
     (G, g, h, o) = params
 
    # ADD CODE HERE
-   """Attack: A malicious party can simply ask the threshold decryption parties
+    """ Attack: A malicious party can simply ask the threshold decryption parties
    to decrypt a secret, not the output of the computation!
    (Trade name: a decryption oracle attack)
-   """
+    """
 
 
     return pub

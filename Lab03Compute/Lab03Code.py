@@ -38,9 +38,8 @@ def keyGen(params):
    Private key is "x", public key is pk= g^x
    """
 
-   from random import randint
-   priv = randint(0,G.order())
-   pub = g**priv
+   priv = o.random()
+   pub = priv * g
 
    return (priv, pub)
 
@@ -53,9 +52,11 @@ def encrypt(params, pub, m):
     """ Encryption of m with pk:random k; E(m; k) = (g^k, g^(xk)*h^m) """
 
     (G, g, h, o) = params
-    from random import randint
-    k = randint()
-    
+
+    k = o.random()
+    a = k * g
+    b = (k * pub) + (m * h)
+    c = (a, b)
 
     return c
 
@@ -91,9 +92,15 @@ def decrypt(params, priv, ciphertext):
     a , b = ciphertext
 
    # ADD CODE HERE
-    """ Decryption of (a,b) with x: m = logh(b*(a^x)^(-1)) (= logh((g^(xk)h^m)/(g^(xk)))) """
+    """ Decryption of (a,b) with x: m = logh(b*(a^x)^(-1))
+        (= logh((g^(xk)h^m)/(g^(xk))))
+    """
 
+    (G, g, h, o) = params
 
+    ax = priv * a
+    axInverse = (-1) * ax
+    hm = b + axInverse
 
     return logh(params, hm)
 
@@ -111,10 +118,16 @@ def add(params, pub, c1, c2):
 
    # ADD CODE HERE
     """
-   Addition of E(m0;k0) = (a0, b0) and E(m1; k1) = (a1, b1)
-   E(m0+m1; k0+k1) = (a0a1, b0b1)
+    Addition of E(m0;k0) = (a0, b0) and E(m1; k1) = (a1, b1)
+    E(m0+m1; k0+k1) = (a0a1, b0b1)
         = (g^(k0)g^(k1), g^(xk0)h^(m0)g^(xk1)h^(m1)) = (g^(k0+k1), g^(x(k0+k1))h^(m0+m1))
     """
+
+    a0, b0 = c1
+    a1, b1 = c2
+    a = a0 + a1
+    b = b0 + b1
+    c3 = (a, b)
 
     return c3
 
@@ -125,9 +138,13 @@ def mul(params, pub, c1, alpha):
 
    # ADD CODE HERE
     """
-   Multiplication of E(m0; k0) = (a0, b0) with a constant c:
-   E(cm0; ck0) = ((a0)^c, (b0)^c)
+    Multiplication of E(m0; k0) = (a0, b0) with a constant c:
+    E(cm0; ck0) = ((a0)^c, (b0)^c)
     """
+    a0, b0 = c1
+    a = alpha * a0
+    b = alpha * b0
+    c3 = (a, b)
 
     return c3
 

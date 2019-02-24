@@ -159,9 +159,23 @@ def groupKey(params, pubKeys=[]):
 
    # ADD CODE HERE
     """
-   Private keys: x1, ..., xn
-   Public key: g^(x1+...+xn)
+    Private keys: x1, ..., xn
+    Public key: g^(x1+...+xn)
+
+    need to do: g^(x1)*g^(x2)*g^(x3)*...*g^(xn)
+        = pub1 * pub2 * pub3 * ... * pubn
     """
+
+    if (len(pubKeys) > 0):
+        sum = pubKeys[0]
+
+        if (len(pubKeys) > 1):
+            for i in range(1,len(pubKeys)):
+                sum += pubKeys[i]
+
+        pub = sum
+    else:
+        return None
 
     return pub
 
@@ -171,8 +185,18 @@ def partialDecrypt(params, priv, ciphertext, final=False):
     assert isCiphertext(params, ciphertext)
 
     # ADD CODE HERE
-    """ Decryption of (a,b): m = b / a^x1 / a^x2 / ... / a^xn """
+    """ Decryption of (a,b): m = b / a^x1 / a^x2 / ... / a^xn
 
+    from task 1: b/ax:
+        ax = priv * a
+        axInverse = (-1) * ax
+        hm = b + axInverse
+    """
+
+    a1, b1 = ciphertext
+    a1x = priv * a1
+    a1xInverse = (-1) * a1x
+    b1 = b1 + a1xInverse
 
     if final:
         return logh(params, b1)

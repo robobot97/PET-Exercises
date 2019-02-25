@@ -220,8 +220,19 @@ def corruptPubKey(params, priv, OtherPubKeys=[]):
     """ Attack: A malicious party can simply ask the threshold decryption parties
     to decrypt a secret, not the output of the computation!
     (Trade name: a decryption oracle attack)
+
+    in essence the overall corrupt public key provided should be able to negate all existing pub keys
+    from other authorities and make the group public key equal to the actual public key of corrupt authority
     """
 
+    sum = OtherPubKeys[0]
+    for keys in OtherPubKeys[1:]:
+        sum += keys
+    sum = (-1) * sum
+
+    legitPublicKey = priv * g
+
+    pub = sum + legitPublicKey
 
     return pub
 

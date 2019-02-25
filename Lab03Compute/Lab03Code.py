@@ -218,8 +218,8 @@ def corruptPubKey(params, priv, OtherPubKeys=[]):
 
    # ADD CODE HERE
     """ Attack: A malicious party can simply ask the threshold decryption parties
-   to decrypt a secret, not the output of the computation!
-   (Trade name: a decryption oracle attack)
+    to decrypt a secret, not the output of the computation!
+    (Trade name: a decryption oracle attack)
     """
 
 
@@ -237,6 +237,17 @@ def encode_vote(params, pub, vote):
     assert vote in [0, 1]
 
    # ADD CODE HERE
+    (G, g, h, o) = params
+
+    k0 = o.random()
+    a0 = k0 * g
+    b0 = (k0 * pub) + (((vote + 1) % 2) * h)
+    v0 = (a0, b0)
+
+    k1 = o.random()
+    a1 = k1 * g
+    b1 = (k1 * pub) + (vote * h)
+    v1 = (a1, b1)
 
     return (v0, v1)
 
@@ -246,6 +257,24 @@ def process_votes(params, pub, encrypted_votes):
     assert isinstance(encrypted_votes, list)
 
    # ADD CODE HERE
+    """ essentially for each pair/entry in the encrypted_votes list:
+            take an entry
+            for entry(0) add to tv0
+            for entry(1) add to tv1
+    """
+
+    tv0, tv1 = encrypted_votes[0]
+
+    for i in range(1,len(encrypted_votes)):
+        v0,v1 = encrypted_votes[i]
+
+        a0 = tv0[0] + v0[0]
+        b0 = tv0[1] + v0[1]
+        tv0 = (a0, b0)
+
+        a1 = tv1[0] + v1[0]
+        b1 = tv1[1] + v1[1]
+        tv1 = (a1, b1)
 
     return tv0, tv1
 

@@ -336,7 +336,25 @@ def simulate_poll(votes):
 # What is the advantage of the adversary in guessing b given your implementation of
 # Homomorphic addition? What are the security implications of this?
 
-""" Your Answer here """
+""" Your Answer here
+
+Considering the adversary A is aware of the criteria of computing C, i.e. that when b=0, C = Pa+Pb
+and when b=1, C = Pb+Pc and that the adversary can carry out the necessary homomorphic operations
+to subtract the ciphertexts we can conclude that since C = Ca + Cb or C = Cb + Cc, by carrying out
+C - (Ca + Cb) and C - (Cb + Cc) and checking whether the results equals zero, the adversary can
+determine the value of b.
+If the result of C - (Ca + Cb) = 0 then b must be 0; if the result of C - (Cb + Cc) = 0 then b must be 1.
+If the adversary was to somehow guess b accurately, then they wouldn't need to carry out the
+homomorphic calculations described above. This means saving resources and time.
+
+The security implications depend on the capabilites of the adversary and the adversary's knowledge.
+As mentioned, the attack is only possible if the adversary is aware of the criteria for computing C
+and either able to guess the value of b accurately or carry out the homomorphic operations described above.
+But if successful the implications are that the adversary A might be able to reverse engineer the
+homomorphic computation carried out by H2 and identify the plaintexts; thus greatly reducing the
+reliability of the implementation.
+
+"""
 
 ###########################################################
 # TASK Q2 -- Answer questions regarding your implementation
@@ -347,4 +365,28 @@ def simulate_poll(votes):
 # that it yields an arbitrary result. Can those malicious actions
 # be detected given your implementation?
 
-""" Your Answer here """
+""" Your Answer here
+
+(a) A malicious user could implement the encode_vote such that they would set the default value
+to a 0 when encoding votes for both v0 and v1 such that the tally of votes for 0 and tally
+of votes for 1 are both equal to zero. This would result in a completely pointless result as it would mean that
+neither 0 or 1 was voted for even though there were votes casted and the only possible options were 0 or 1. The
+code statements needed to alter for this would be to change b0 or b1, as follows:
+    b0 = (k0 * pub) + (0 * h) as well as b1 = (k1 * pub) + (0 * h)
+
+(b) A malicious user could easily implement the encode_vote function such that it would result in an
+inaccurate and arbitrary result. One such possible implementation is to always increase the tally of one of the vote options
+despite the actual vote, such that if the malicious user wants to favour votes for 0 they could set the following statements for b0 and b1:
+    b0 = (k0 * pub) + (1 * h) as well as b1 = (k1 * pub) + (0 * h)
+This will mean that despite the actual vote the tally of votes for 1 will be zero and the tally of votes for 0 will be maximum.
+Alternatively, for a completely random and arbitrary result the malicious user could implement a random number generator between 0 and 1
+and use this to calculate the values of b0 and b1, instead of the actual votes.
+
+None of the malicious actions mentioned above can be detected by the implementation of the actual encode_vote
+function above, because there are no checks to verify whether the sum of the tally for both votes for 0 and votes for 1
+equal the total number of votes. Additionally, there is no way to ascertain the tally until after the decryption occurs.
+Furthermore, there is no checks for a bias in the implementation, which could determine whether the tally has been
+tampered with. Finally, testing for whether the tally has been done on a random basis or on the actual votes
+is not implemented.
+
+"""

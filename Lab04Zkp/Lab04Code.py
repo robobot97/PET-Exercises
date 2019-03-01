@@ -105,16 +105,22 @@ def proveCommitment(params, C, r, secrets):
         random ... wi...;
         W = Pi * gi^wi
         c = H(... gi..., C, W)
-        ri= wi – c * v
-        Send (c, ... ri...)
+        ri = wi - c * v
+        Send (c, ...ri...)
 
-        v == r; o ==
+        v == x; o == r
     """
     (G, g, (h0, h1, h2, h3), o) = params
     x0, x1, x2, x3 = secrets
 
     ## YOUR CODE HERE:
-    Cw_prime =
+
+    w0, w1, w2, w3, w4 = o.random()
+
+    Psum = x0 * h0 + x1 * h1 + x2 * h2 + x3 * h3
+    #W =
+
+    Cw_prime = c * C + r0 * h0 + r1 * h1 + r2 * h2 + r3 * h3 + rr * g
     c = to_challenge([g, h0, h1, h2, h3, (Cw_prime)])
 
     return (c, responses)
@@ -158,13 +164,21 @@ def proveDLEquality(params, x, K, L):
     return (c, r)
 
 def verifyDLEquality(params, K, L, proof):
-    """ Return whether the verification of equality of two discrete logarithms succeeded. """
+    """ Return whether the verification of equality of two discrete logarithms succeeded.
+
+    H(h, g, P1, P2, g^r * P1^c, h^r * P2^c) == c
+    K = x * g = P1
+    L = x * h0 = P2
+    """
     (G, g, (h0, h1, h2, h3), o) = params
     c, r = proof
 
     ## YOUR CODE HERE:
+    W1Eq = g.pt_mul(r) + K.pt_mul(c)
+    W2Eq = h0.pt_mul(r) + L.pt_mul(c)
+    calculatedValue = to_challenge([g, h0, W1Eq, W2Eq])
 
-    return # YOUR RETURN HERE
+    return  calculatedValue == c
 
 #####################################################
 # TASK 4 -- Prove correct encryption and knowledge of

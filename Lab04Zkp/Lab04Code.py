@@ -51,22 +51,28 @@ def proveKey(params, priv, pub):
 
         Private x
         1. random w; W = g^w
-        2. Random c
+        2. Random c; in this case use: c = Hash(pub, W, m)
         3. r = (w - c * x) mod q
         4. Check: g^r * pub^c = W
     """
     (G, g, hs, o) = params
 
     ## YOUR CODE HERE:
+    # Step 1a: generate random witness limited by the Group order
     w = o.random()
+    # Step 1b: calculate g^w = W, accordingly to the formula
     W = g.pt_mul(w)
 
-    c = to_challenge([g, W])
+    # Step 2: generate a challenge as the Hash of the generator and W
+    c = to_challenge([W, g])
 
+    # Step 3: generate the response, according to the formula in the slides
     r = (w - c * priv) % o
 
+    # Step 4: check that the proof can be verified
     assert((g.pt_mul(r) + pub.pt_mul(c)) == (W))
 
+    # Step 5: send proof (challenge and response) to verifier
     return (c, r)
 
 def verifyKey(params, pub, proof):
@@ -111,40 +117,47 @@ def proveCommitment(params, C, r, secrets):
 
         v == x; o == r
 
-        random w1, w2;
-        W = g^w1 * h*w2
-        c = H(g, h, C, W)
-        r1 = w1 - c * v
-        r2 = w2 - c * o
-        Send (c, r1, r2)
+        Step 1: random w1, w2;
+        Step 2: W = g^w1 * h*w2
+        Step 3: c = H(g, h, C, W)
+        Step 4: r1 = w1 - c * v
+        Step 5: r2 = w2 - c * o
+        Step 6: Send (c, r1, r2)
     """
     (G, g, (h0, h1, h2, h3), o) = params
     x0, x1, x2, x3 = secrets
 
     ## YOUR CODE HERE:
 
+    # Step 1: generate 5 different random witnesses because there are 4 secrets + 1 commitment opening, limited by the Group order
     w0 = o.random()
     w1 = o.random()
     w2 = o.random()
     w3 = o.random()
     w4 = o.random()
 
+    # Step 2a: calculate h^w for each unique h-w pair and sum these together
     hwSum = h0.pt_mul(w0) + h1.pt_mul(w1) + h2.pt_mul(w2) + h3.pt_mul(w3)
+    # Step 2b: calculate witness W which should have the same shape as the commitment
+        #Cw_prime = c * C + r0 * h0 + r1 * h1 + r2 * h2 + r3 * h3 + rr * g
     W = g.pt_mul(w4) + hwSum
 
+    # Step 3: generate a challenge, hashing all generators of the group plus witness W
+        #c = to_challenge([g, h0, h1, h2, h3, (Cw_prime)])
     c = to_challenge([g, h0, h1, h2, h3, W])
 
+    # Step 4: generate responses for each of the 4 secrets, similar to method in task 1
     r0 = (w0 - c * x0) % o
     r1 = (w1 - c * x1) % o
     r2 = (w2 - c * x2) % o
     r3 = (w3 - c * x3) % o
+    # Step 5: generate response for the commitment opening
     rr = (w4 - c * r) % o
 
+    # Step 5.5: format all responses into a suitable output format
     responses = (r0, r1, r2, r3, rr)
 
-    #Cw_prime = c * C + r0 * h0 + r1 * h1 + r2 * h2 + r3 * h3 + rr * g
-    #c = to_challenge([g, h0, h1, h2, h3, (Cw_prime)])
-
+    # Step 6: send the proof, commitment and all responses
     return (c, responses)
 
 def verifyCommitments(params, C, proof):
@@ -191,15 +204,33 @@ def verifyDLEquality(params, K, L, proof):
     H(h, g, P1, P2, g^r * P1^c, h^r * P2^c) == c
     K = x * g = P1
     L = x * h0 = P2
+
+    Essentially, just need to hash the relevant variables/info and compare that to commitment to verify
+    ignore P1 and P2 from above hash formula because not used in the proveDLEquality function
+
     """
     (G, g, (h0, h1, h2, h3), o) = params
     c, r = proof
 
     ## YOUR CODE HERE:
-    W1Eq = g.pt_mul(r) + K.pt_mul(c)
-    W2Eq = h0.pt_mul(r) + L.pt_mul(c)
+    # Step 1: calculate g^r, first part of the equivalent of W1
+    gr = g.pt_mul(r)
+    # Step 2: calculate K^c, equivalent to P1^c
+    Kc = K.pt_mul(c)
+    # Step 3: calculate the equivalent of W1 in the proof algorithm
+    W1Eq = gr + kc
+
+    # Step 4: calculate h^r
+    hr = h0.pt_mul(r)
+    # Step 5: calculate L^c, equivalent to P2^c
+    Lc = L.pt_mul(c)
+    # Step 6: calculate the equivalent of W2 in the proof algorithm
+    W2Eq = hr + Lc
+
+    # Step 7: hash the relevant info, variables calculated earlier, to calculate the actual value of the commitment
     calculatedValue = to_challenge([g, h0, W1Eq, W2Eq])
 
+    # Step 8: compare the actual and verifying commitment values and return accordingly
     return  calculatedValue == c
 
 #####################################################

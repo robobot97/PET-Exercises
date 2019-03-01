@@ -110,6 +110,13 @@ def proveCommitment(params, C, r, secrets):
         Send (c, ...ri...)
 
         v == x; o == r
+
+        random w1, w2;
+        W = g^w1 * h*w2
+        c = H(g, h, C, W)
+        r1 = w1 - c * v
+        r2 = w2 - c * o
+        Send (c, r1, r2)
     """
     (G, g, (h0, h1, h2, h3), o) = params
     x0, x1, x2, x3 = secrets

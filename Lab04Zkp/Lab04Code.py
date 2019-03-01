@@ -106,6 +106,7 @@ def proveCommitment(params, C, r, secrets):
         W = Pi * gi^wi
         c = H(... gi..., C, W)
         ri = wi - c * v
+            r1=v1-cx1(mod q) and r2=v2-cx2(mod q)
         Send (c, ...ri...)
 
         v == x; o == r
@@ -115,13 +116,27 @@ def proveCommitment(params, C, r, secrets):
 
     ## YOUR CODE HERE:
 
-    w0, w1, w2, w3, w4 = o.random()
+    w0 = o.random()
+    w1 = o.random()
+    w2 = o.random()
+    w3 = o.random()
+    w4 = o.random()
 
-    Psum = x0 * h0 + x1 * h1 + x2 * h2 + x3 * h3
-    #W =
+    hwSum = h0.pt_mul(w0) + h1.pt_mul(w1) + h2.pt_mul(w2) + h3.pt_mul(w3)
+    W = g.pt_mul(w4) + hwSum
 
-    Cw_prime = c * C + r0 * h0 + r1 * h1 + r2 * h2 + r3 * h3 + rr * g
-    c = to_challenge([g, h0, h1, h2, h3, (Cw_prime)])
+    c = to_challenge([g, h0, h1, h2, h3, W])
+
+    r0 = (w0 - c * x0) % o
+    r1 = (w1 - c * x1) % o
+    r2 = (w2 - c * x2) % o
+    r3 = (w3 - c * x3) % o
+    rr = (w4 - c * r) % o
+
+    responses = (r0, r1, r2, r3, rr)
+
+    #Cw_prime = c * C + r0 * h0 + r1 * h1 + r2 * h2 + r3 * h3 + rr * g
+    #c = to_challenge([g, h0, h1, h2, h3, (Cw_prime)])
 
     return (c, responses)
 

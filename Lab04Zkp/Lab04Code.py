@@ -250,6 +250,8 @@ def proveEnc(params, pub, Ciphertext, k, m):
         and knowledge of the message encrypted as well.
 
         Return the proof: challenge and the responses.
+
+        Looking for 2 responses, one for randomness and one for message
     """
     (G, g, (h0, h1, h2, h3), o) = params
     a, b = Ciphertext
@@ -286,7 +288,21 @@ def relation(params, x1):
     return C, x0, x1, r
 
 def prove_x0eq10x1plus20(params, C, x0, x1, r):
-    """ Prove C is a commitment to x0 and x1 and that x0 = 10 x1 + 20. """
+    """ Prove C is a commitment to x0 and x1 and that x0 = 10 x1 + 20.
+
+    C = g^r * h1^x1 * h0^x0
+    The actual commitments are:
+        Cx0 = g^x0 * h^o1
+        Cx1 = g^x1 * h^o2
+        x0 = (10 * x1 + 20)
+
+    Substituing gives 2 commitments:
+        Cx0 = g^(10 * x1 + 20) * h^o1 = g^(10*x1) * g^20 * h^o1 = (g^10)^x1 * g^20 * h^o1
+        Cx1 = g^x1 * h^o2
+
+    Use DL representation and Equality Proofs
+
+    """
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:

@@ -64,7 +64,7 @@ def proveKey(params, priv, pub):
     W = g.pt_mul(w)
 
     # Step 2: generate a challenge as the Hash of the generator and W
-    c = to_challenge([W, g])
+    c = to_challenge([g, W])
 
     # Step 3: generate the response, according to the formula in the slides
     r = (w - c * priv) % o
@@ -218,7 +218,7 @@ def verifyDLEquality(params, K, L, proof):
     # Step 2: calculate K^c, equivalent to P1^c
     Kc = K.pt_mul(c)
     # Step 3: calculate the equivalent of W1 in the proof algorithm
-    W1Eq = gr + kc
+    W1Eq = gr + Kc
 
     # Step 4: calculate h^r
     hr = h0.pt_mul(r)

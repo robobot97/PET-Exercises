@@ -263,11 +263,12 @@ def proveEnc(params, pub, Ciphertext, k, m):
 
     pubk = pub.pt_mul(wk)
     gk = g.pt_mul(wk)
-    gm = h0.pt_mul(wm)
+    hm = h0.pt_mul(wm)
 
-    W = pubk + gk + gm
+    W1 = gk
+    W2 = hm + pubk
 
-    c = to_challenge([pub, g, h0, W])
+    c = to_challenge([g, h0, pub, W1, W2])
 
     rk = (wk - c * k) % o
     rm = (wm - c * m) % o
@@ -282,18 +283,16 @@ def verifyEnc(params, pub, Ciphertext, proof):
 
     ## YOUR CODE HERE:
 
-    Cw_prime = rk * h0 + rm * g
-    c_prime = to_challenge([pub, g, h0, Cw_prime])
-
     grk = g.pt_mul(rk)
     ac = a.pt_mul(c)
     W1Eq = grk + ac
 
     hrm = h0.pt_mul(rm)
+    pubrk = pub.pt_mul(rk)
     bc = b.pt_mul(c)
-    W1Eq = hrm + bc
+    W2Eq = hrm + pubrk + bc
 
-    c_calculated = to_challenge([pub, g, h0, Cw_prime, W1Eq, W1Eq])
+    c_calculated = to_challenge([g, h0, pub, W1Eq, W2Eq])
 
     return c_calculated == c
 
@@ -338,37 +337,37 @@ def prove_x0eq10x1plus20(params, C, x0, x1, r):
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
-    x0 = x0 - 20
 
-    wx0 = o.random()
     wx1 = o.random()
     wr = o.random()
 
-    hx0 = h0.pt_mul(wx0)
+    h10x1 = h0.pt_mul(10 * wx1)  #((h0.pt_mul(wx1)).pt_mul(10)) = h0^(10*x1)
     hx1 = h1.pt_mul(wx1)
     gr = g.pt_mul(wr)
 
-    W = gr + hx0 + hx1
+    W = gr + h10x1 + hx1
 
     c = to_challenge([g, h0, h1, W])
 
-    rx0 = (wx0 - c * x0) % o
     rx1 = (wx1 - c * x1) % o
     rr = (wr - c * r) % o
 
-    responses = (rx0, rx1, rr)
+    responses = (rx1, rr)
 
     return (c, responses)
 
 def verify_x0eq10x1plus20(params, C, proof):
-    """ Verify that proof of knowledge of C and x0 = 10 x1 + 20. """
+    """ Verify that proof of knowledge of C and x0 = 10 x1 + 20.
+
+    the value of C changes to C - 20 because we moved 20 to the left in the prove function
+    """
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
     c, responses = proof
-    rx0, rx1, rr = responses
+    rx1, rr = responses
 
-    Cw_prime = c * (C - 20 * h0) + rx0 * h0 + rx1 * h1 + rr * g
+    Cw_prime = c * (C - (20 * h0)) + (10 * rx1) * h0 + rx1 * h1 + rr * g
     c_prime = to_challenge([g, h0, h1, Cw_prime])
 
     return c_prime == c

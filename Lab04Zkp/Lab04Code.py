@@ -302,6 +302,7 @@ def prove_x0eq10x1plus20(params, C, x0, x1, r):
 
     Use DL representation and Equality Proofs
 
+    need to prove x1, r, and x0 = 10 * x1 + 20
     """
     (G, g, (h0, h1, h2, h3), o) = params
 

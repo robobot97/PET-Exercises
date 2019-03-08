@@ -252,48 +252,74 @@ def proveEnc(params, pub, Ciphertext, k, m):
         Return the proof: challenge and the responses.
 
         Looking for 2 responses, one for randomness and one for message
+
+        a = k * g ; b =  k * pub + m * h0
+
+        essentially carry out proof of knowledge on k and m, as well as proving DL representation of k using 'a' and 'b' of the ciphertext
     """
     (G, g, (h0, h1, h2, h3), o) = params
     a, b = Ciphertext
 
     ## YOUR CODE HERE:
 
+    #  generate 2 random nonce variables, limited by the order of the Group
     wk = o.random()
     wm = o.random()
 
+    # calculate pub^k equivalent, as in 'b' of the ciphertext, for proving DL representation of k
     pubk = pub.pt_mul(wk)
+    # calculate g^k equivalent, for proving knowledge of k and for proving DL representation of k
     gk = g.pt_mul(wk)
+    # calculate h^m equivalent, used for proving knowledge of m
     hm = h0.pt_mul(wm)
 
+    # initialise a witness for g^k
     W1 = gk
+    # initialise a witness for h^m and pub^k
     W2 = hm + pubk
 
+    # hash all the generators (along with public key) and witnesses to create the challenge
     c = to_challenge([g, h0, pub, W1, W2])
 
+    # generate a response to prove knowledge of k
     rk = (wk - c * k) % o
+    # generate a response to prove knowledge of m
     rm = (wm - c * m) % o
 
+    # return challenge and all responses
     return (c, (rk, rm))
 
 def verifyEnc(params, pub, Ciphertext, proof):
-    """ Verify the proof of correct encryption and knowledge of a ciphertext. """
+    """ Verify the proof of correct encryption and knowledge of a ciphertext.
+
+    Use verification function from task 3
+    """
     (G, g, (h0, h1, h2, h3), o) = params
     a, b = Ciphertext
     (c, (rk, rm)) = proof
 
     ## YOUR CODE HERE:
 
+    # calculate g^(response of k)
     grk = g.pt_mul(rk)
+    # calculate a^c, used to test 'a' of ciphertext is correct
     ac = a.pt_mul(c)
+    # calculate the witness equivalent of g^k from proof function
     W1Eq = grk + ac
 
+    # calculate h^(response of m)
     hrm = h0.pt_mul(rm)
+    # calculate pub^(response of k)
     pubrk = pub.pt_mul(rk)
+    # calculate b^c, used to test 'b' of ciphertext is correct
     bc = b.pt_mul(c)
+    # calculate the witness equivalent of h^m and pub^k from proof function
     W2Eq = hrm + pubrk + bc
 
+    # hash the generators (along with public key) and the equivalent of the witnesses to create the calculated challenge value
     c_calculated = to_challenge([g, h0, pub, W1Eq, W2Eq])
 
+    # return the comparison of the calculated and actual challenge values
     return c_calculated == c
 
 
@@ -333,43 +359,65 @@ def prove_x0eq10x1plus20(params, C, x0, x1, r):
     can ignore the 20 since it is a known value
 
     so need to prove x1, r, 10 * x1
+
+    essentially proving knowledge of x1, r and 10x1
     """
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
 
+    # generate two random (nonce) values, one for x1 and one for r
     wx1 = o.random()
     wr = o.random()
 
-    h10x1 = h0.pt_mul(10 * wx1)  #((h0.pt_mul(wx1)).pt_mul(10)) = h0^(10*x1)
+    # calculate h^(10x1) equivalent, the relation to be tested between x0 and x1
+    h10x1 = h0.pt_mul(10 * wx1)  # this is equivalent to ((h0.pt_mul(wx1)).pt_mul(10)) which equals h0^(10*x1)
+    # calculate h^x1 equivalent, used for proving knowlegde of x1
     hx1 = h1.pt_mul(wx1)
+    # calculate g^r equivalent, used for proving r (the commitement opening)
     gr = g.pt_mul(wr)
 
+    # calculate witness using all previous previously calculated wtinesses
     W = gr + h10x1 + hx1
 
+    # hash the generators and witness to create the challenge
     c = to_challenge([g, h0, h1, W])
 
+    # generate response for x1
     rx1 = (wx1 - c * x1) % o
+    # generate response for r
     rr = (wr - c * r) % o
 
+    # combine all responses into one variable
     responses = (rx1, rr)
 
+    # return the challenge and all responses
     return (c, responses)
 
 def verify_x0eq10x1plus20(params, C, proof):
     """ Verify that proof of knowledge of C and x0 = 10 x1 + 20.
 
-    the value of C changes to C - 20 because we moved 20 to the left in the prove function
+    The value of C changes to C - h^20 because we moved 20 to the left in the prove function
+
     """
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
+
+    # get and set the challenge and response variables from the prove function
     c, responses = proof
+    # separate and set the responses accordingly
     rx1, rr = responses
 
-    Cw_prime = c * (C - (20 * h0)) + (10 * rx1) * h0 + rx1 * h1 + rr * g
+    # update value of C, according to the substitution carried out in the prove function
+    C = C - (20 * h0)
+    # using the verify function from task 2 to calculate the equivalent of the witnesses
+    # for x0 use the relation 10x1 to prove the relation holds
+    Cw_prime = c * C + (10 * rx1) * h0 + rx1 * h1 + rr * g
+    # hash the generators and witness equivalent to generate the calculated challenge
     c_prime = to_challenge([g, h0, h1, Cw_prime])
 
+    # return the comparison between calculated and proof challenges, if match then relation holds and commitment is accurate
     return c_prime == c
 
 #####################################################

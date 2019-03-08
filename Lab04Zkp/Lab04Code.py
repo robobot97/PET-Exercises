@@ -258,6 +258,20 @@ def proveEnc(params, pub, Ciphertext, k, m):
 
     ## YOUR CODE HERE:
 
+    wk = o.random()
+    wm = o.random()
+
+    pubk = pub.pt_mul(wk)
+    gk = g.pt_mul(wk)
+    gm = h0.pt_mul(wm)
+
+    W = pubk + gk + gm
+
+    c = to_challenge([pub, g, h0, W])
+
+    rk = (wk - c * k) % o
+    rm = (wm - c * m) % o
+
     return (c, (rk, rm))
 
 def verifyEnc(params, pub, Ciphertext, proof):
@@ -268,7 +282,20 @@ def verifyEnc(params, pub, Ciphertext, proof):
 
     ## YOUR CODE HERE:
 
-    return ## YOUR RETURN HERE
+    Cw_prime = rk * h0 + rm * g
+    c_prime = to_challenge([pub, g, h0, Cw_prime])
+
+    grk = g.pt_mul(rk)
+    ac = a.pt_mul(c)
+    W1Eq = grk + ac
+
+    hrm = h0.pt_mul(rm)
+    bc = b.pt_mul(c)
+    W1Eq = hrm + bc
+
+    c_calculated = to_challenge([pub, g, h0, Cw_prime, W1Eq, W1Eq])
+
+    return c_calculated == c
 
 
 #####################################################
@@ -303,20 +330,48 @@ def prove_x0eq10x1plus20(params, C, x0, x1, r):
     Use DL representation and Equality Proofs
 
     need to prove x1, r, and x0 = 10 * x1 + 20
+
+    can ignore the 20 since it is a known value
+
+    so need to prove x1, r, 10 * x1
     """
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
+    x0 = x0 - 20
 
-    return ## YOUR RETURN HERE
+    wx0 = o.random()
+    wx1 = o.random()
+    wr = o.random()
+
+    hx0 = h0.pt_mul(wx0)
+    hx1 = h1.pt_mul(wx1)
+    gr = g.pt_mul(wr)
+
+    W = gr + hx0 + hx1
+
+    c = to_challenge([g, h0, h1, W])
+
+    rx0 = (wx0 - c * x0) % o
+    rx1 = (wx1 - c * x1) % o
+    rr = (wr - c * r) % o
+
+    responses = (rx0, rx1, rr)
+
+    return (c, responses)
 
 def verify_x0eq10x1plus20(params, C, proof):
     """ Verify that proof of knowledge of C and x0 = 10 x1 + 20. """
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
+    c, responses = proof
+    rx0, rx1, rr = responses
 
-    return ## YOUR RETURN HERE
+    Cw_prime = c * (C - 20 * h0) + rx0 * h0 + rx1 * h1 + rr * g
+    c_prime = to_challenge([g, h0, h1, Cw_prime])
+
+    return c_prime == c
 
 #####################################################
 # TASK 6 -- (OPTIONAL) Prove that a ciphertext is either 0 or 1

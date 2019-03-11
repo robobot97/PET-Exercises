@@ -463,7 +463,16 @@ def test_bin_incorrect():
 # that  deviates from the Schnorr identification protocol? Justify
 # your answer by describing what a dishonest verifier may do.
 
-""" TODO: Your answer here. """
+""" TODO: Your answer here.
+
+For an honest verifier, the challenge sent to the prover should be random. However,
+since a dishonest verifier can technically design a challenge 'c' which is not random
+but instead has a relation with W = g^w, w being a random witness, which the dishonest verifier
+receives from the prover, "plausible deniability" does not hold against a dishonest verifier.
+More specifically, the dishnoest verifier could generate the challenge as a hash of W, hence
+deviating from the Schnorr identification protocol, then sending this back to the prover.
+
+"""
 
 #####################################################
 # TASK Q2 - Answer the following question:
@@ -476,7 +485,14 @@ def test_bin_incorrect():
 #
 # Hint: Look at "test_prove_something" too.
 
-""" TODO: Your answer here. """
+""" TODO: Your answer here.
+
+Since the prover builds a proof such that c1 + c2 = c (mod o), the verifier needs to
+verify this holds. However, since only one of the secrets is provided to the proover
+it can only have an appripriate response for y. Therefore, when it comes to the
+verifier, it can be convinced that it will be able to verify y, but only y and not x.
+
+"""
 
 def prove_something(params, KX, KY, y):
     (G, g, _, o) = params

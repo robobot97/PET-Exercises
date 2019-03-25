@@ -399,6 +399,50 @@ def credential_show_pseudonym(params, issuer_pub_params, u, u_prime, v, service_
     pseudonym = v * N
 
     ## TODO (use code from above and modify as necessary!)
+    alpha = o.random()
+    u = u.pt_mul(alpha)
+    u_prime = u_prime.pt_mul(alpha)
+
+
+    r = o.random()
+    z1 = o.random()
+
+    u_v = u.pt_mul(v)
+    h_z1 = h.pt_mul(z1)
+    Cv = u_v + h_z1
+
+    g_r = g.pt_mul(r)
+    Cup = u_prime + g_r
+
+    tag = (u, Cv, Cup)
+
+    # Proof
+    # NIZK{(r, z1,v):
+    #           Cv = v * u + z1 * h and
+    #           V  = r * (-g) + z1 * X1 and
+    #           pseudonym = v * N = ps}
+
+    w_r = o.random()
+    w_z1 = o.random()
+    w_v = o.random()
+
+    u_v = u.pt_mul(w_v)
+    h_z1 = h.pt_mul(w_z1)
+    gi_r = (-g).pt_mul(w_r)
+    X1_z1 = X1.pt_mul(w_z1)
+
+    W_Cv = u_v + h_z1
+    W_V = gi_r + X1_z1
+
+    W_ps = N.pt_mul(w_v)
+
+    c = to_challenge([u, h, g, X1, N, Cv, Cup, Cx0, W_Cv, W_V, W_ps])
+
+    rr = (w_r - c * r) % o
+    rz1 =  (w_z1 - c * z1) % o
+    rv = (w_v - c * v) % o
+
+    proof = (c, rr, rz1, rv)
 
     return pseudonym, tag, proof
 
@@ -419,6 +463,28 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
     ## Verify the correct Show protocol and the correctness of the pseudonym
 
     # TODO (use code from above and modify as necessary!)
+    (c, rr, rz1, rv) = proof
+    (u, Cv, Cup) = tag
+
+    u_x0 = u.pt_mul(x0)
+    Cv_x1 = Cv.pt_mul(x1)
+    V = (u_x0 + Cv_x1) - Cup
+
+    Cv_c = Cv.pt_mul(c)
+    u_rv = u.pt_mul(rv)
+    h_rz1 = h.pt_mul(rz1)
+    W_Cv = Cv_c + u_rv + h_rz1
+
+    V_c = V.pt_mul(c)
+    gi_rr = (-g).pt_mul(rr)
+    X1_rz1 = X1.pt_mul(rz1)
+    W_V = V_c + gi_rr + X1_rz1
+
+    ps_c = pseudonym.pt_mul(c)
+    N_rv = N.pt_mul(rv)
+    W_ps = ps_c + N_rv
+
+    c_prime = to_challenge([u, h, g, X1, N, Cv, Cup, Cx0, W_Cv, W_V, W_ps])
 
     return c == c_prime
 

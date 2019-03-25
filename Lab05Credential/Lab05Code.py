@@ -484,7 +484,7 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
     N_rv = N.pt_mul(rv)
     W_ps = ps_c + N_rv
 
-    c_prime = to_challenge([u, h, g, X1, N, Cv, Cup, Cx0, W_Cv, W_V, W_ps]) 
+    c_prime = to_challenge([u, h, g, X1, N, Cv, Cup, Cx0, W_Cv, W_V, W_ps])
 
     return c == c_prime
 
@@ -497,4 +497,24 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
 # What would the credential represent, and what statements
 # would need to be shown to a verifier.
 
-""" Your answer here. """
+""" Your answer here.
+
+The scheme could be used to implement an online transaction system where a centralised authority, also the issuer of credentials,
+acts as a bank, for many customers, being assigned credentials, and many e-commerce websites, acting as verifiers.
+Here, if a customer Alice wants to add some amount of money to their e-wallet they would contact the issuer (central bank)
+and give them a hash representation of the value of money she wants to add and a random unique number. This hash will be stored
+by the bank which will then issue it into Alice's e-wallet after creating a MAC of the hash value and proving that it is valid.
+Additionally, the bank will send Alice back a credential. This credential will be the MAC generated earlier and the proof of validity.
+Next, Alice will generate a stable pseudonym for her e-wallet account using the method implemented in the task 4 and send this to the bank,
+which then stores this pseudonym. Note: a different pseudonym will be used for each transaction of money into Alice's e-wallet.
+
+Now, say Alice wants to spend the money she just added into her e-wallet for an online retailer supporting this scheme. She will send the pseudonym,
+a MAC she rebuilds, and a Zero-Knowledge proof of validity of the credential to the online retailer. The retailer (verifier) will contact the issuing bank
+and send the proof to ensure the transaction is verified. If verified, the bank will then transfer the money from Alice's e-wallet into the
+retailer's e-wallet and delete the pseudonym for Alice which corresponds to the original money transaction Alice added into her e-wallet.
+
+To ensure privacy, pseduonyms will have to be different for each time Alice adds money to her e-wallet; also credentials will be unique. To ensure integrity (no-double spending),
+the bank deletes the pseudonym of a transaction which has been transferred from Alice's account to another account, such that, the same transaction
+will not be verified (upon a request to spend) and thus cannot be spent again. 
+
+"""

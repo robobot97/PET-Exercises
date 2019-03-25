@@ -166,11 +166,33 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #     and x1b = (b * x1) mod o
 
     # TODO 1 & 2
+    #'b' in above equations is actually referred to as beta later on so b above == beta
+    beta = o.random();
+    u = g.pt_mul(beta)
+
+    X1_beta = X1.pt_mul(beta)
+    h_x1_beta = h.pt_mul(beta * x1)
+    assert(X1_beta == h_x1_beta)
+
+    X1b = X1_beta
+    x1b = (beta * x1) % o
+
 
     # 3) The encrypted MAC is u, and an encrypted u_prime defined as
     #    E( (b*x0) * g + (x1 * b * v) * g ) + E(0; r_prime)
 
     # TODO 3
+    r_prime = o.random()
+
+    r_prime_g = g.pt_mul(r_prime)
+    x1b_a = a.pt_mul(x1b)
+    new_a = r_prime_g + x1b_a
+
+    r_prime_pub = pub.pt_mul(r_prime)
+    x1b_b = b.pt_mul(x1b)
+    x0_u = u.pt_mul(x0)
+    new_b = r_prime_pub + x1b_b + x0_u
+
 
     ciphertext = new_a, new_b
 
@@ -185,6 +207,31 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #       Cx0 = x0 * g + x0_bar * h }
 
     ## TODO proof
+    w_x1 = o.random()
+    w_beta = o.random()
+    w_x1b = o.random()
+    w_r_prime = o.random()
+    w_x0 = o.random()
+    w_x0_bar = o.random()
+
+    h_x1 = h.pt_mul(w_x1)
+    X1_beta = X1.pt_mul(w_beta)
+    h_x1b = h.pt_mul(w_x1b)
+    g_beta = g.pt_mul(w_beta)
+    ga_new_a = g.pt_mul(w_r_prime) + a.pt_mul(w_x1b)
+    pubbu_new_b = pub.pt_mul(w_r_prime) + b.pt_mul(w_x1b) + u.pt_mul(w_x0)
+    gh_Cx0 = g.pt_mul(w_x0) + h.pt_mul(w_x0_bar)
+
+    c = to_challenge([g, h, pub, a, b, X1, X1b, new_a, new_b, Cx0, h_x1, X1_beta, h_x1b, g_beta, ga_new_a, pubbu_new_b, gh_Cx0])
+
+    r_x1 = (w_x1 - c * x1) % o
+    r_beta = (w_beta - c * beta) % o
+    r_x1b = (w_x1b - c * x1b) % o
+    r_r_prime = (w_r_prime - c * r_prime) % o
+    r_x0 = (w_x0 - c * x0) % o
+    r_x0_bar = (w_x0_bar - c * x0_bar) % o
+
+    rs = (r_x1, r_beta, r_x1b, r_r_prime, r_x0, r_x0_bar)
 
     proof = (c, rs, X1b) # Where rs are multiple responses
 

@@ -94,22 +94,26 @@ def credential_EncryptUserSecret(params, pub, priv):
     """
     Similar to task 4 of Lab04, prove knowledge of k, v, and priv
     """
-
+    # generate random witnesses for each term to be proved
     wk = o.random()
     wv = o.random()
     wpriv = o.random()
 
+    # calculate generators to power of the witnesses, to generate 'W' witnesses
     gk = g.pt_mul(wk)
     pubk = pub.pt_mul(wk)
     gv = g.pt_mul(wv)
     gpriv = g.pt_mul(wpriv)
 
+    # define each 'W' witness for each of the terms to be proved, based on the equations to prove above
     Wk = gk
     Wv = pubk + gv
     Wpriv = gpriv
 
+    # create the challenge
     c = to_challenge([g, pub, a, b, Wk, Wv, Wpriv])
 
+    # create the necessary responses
     rk = (wk - c * k) % o
     rv = (wv - c * v) % o
     rpriv = (wpriv - c * priv) % o
@@ -166,14 +170,19 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #     and x1b = (b * x1) mod o
 
     # TODO 1 & 2
-    #'b' in above equations is actually referred to as beta later on so b above == beta
+
+    # create a random beta ,'b' in above equations is actually referred to as beta later on so b above == beta
     beta = o.random();
+    # create 'u' from task 1
     u = g.pt_mul(beta)
 
+    # calculate X1b from task 2 above, in both ways defined
     X1_beta = X1.pt_mul(beta)
     h_x1_beta = h.pt_mul(beta * x1)
+    # check if both calculation methods are equal
     assert(X1_beta == h_x1_beta)
 
+    # define X1b and x1b for task task 2 above
     X1b = X1_beta
     x1b = (beta * x1) % o
 
@@ -182,18 +191,29 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #    E( (b*x0) * g + (x1 * b * v) * g ) + E(0; r_prime)
 
     # TODO 3
+
+    # generate random "r'"
     r_prime = o.random()
 
+    # calculate new_a, used for the ciphertext
+    # calculate g^r'
     r_prime_g = g.pt_mul(r_prime)
+    # calculate a^x1b
     x1b_a = a.pt_mul(x1b)
+    # calculate the sum to form new_a
     new_a = r_prime_g + x1b_a
 
+    # calculate new_b, used for the second part of the ciphertext
+    # calculate pub^r'
     r_prime_pub = pub.pt_mul(r_prime)
+    # calculate b^x1b
     x1b_b = b.pt_mul(x1b)
+    # calculate u^x0
     x0_u = u.pt_mul(x0)
+    # calculate sum to form new_b
     new_b = r_prime_pub + x1b_b + x0_u
 
-
+    # define ciphertext using new a and b values
     ciphertext = new_a, new_b
 
     ## A large ZK proof that:
@@ -207,6 +227,7 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     #       Cx0 = x0 * g + x0_bar * h }
 
     ## TODO proof
+    # generate random witnesses for each term to be proved
     w_x1 = o.random()
     w_beta = o.random()
     w_x1b = o.random()
@@ -214,6 +235,7 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     w_x0 = o.random()
     w_x0_bar = o.random()
 
+    # calculate all calculatios to generate the 'W' witnesses for each term
     h_x1 = h.pt_mul(w_x1)
     X1_beta = X1.pt_mul(w_beta)
     h_x1b = h.pt_mul(w_x1b)
@@ -222,8 +244,10 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     pubbu_new_b = pub.pt_mul(w_r_prime) + b.pt_mul(w_x1b) + u.pt_mul(w_x0)
     gh_Cx0 = g.pt_mul(w_x0) + h.pt_mul(w_x0_bar)
 
+    # generate the challenge for the proof
     c = to_challenge([g, h, pub, a, b, X1, X1b, new_a, new_b, Cx0, h_x1, X1_beta, h_x1b, g_beta, ga_new_a, pubbu_new_b, gh_Cx0])
 
+    # generate responses for each term to be proved
     r_x1 = (w_x1 - c * x1) % o
     r_beta = (w_beta - c * beta) % o
     r_x1b = (w_x1b - c * x1b) % o
@@ -231,6 +255,7 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     r_x0 = (w_x0 - c * x0) % o
     r_x0_bar = (w_x0_bar - c * x0_bar) % o
 
+    # combine all responses into one group
     rs = (r_x1, r_beta, r_x1b, r_r_prime, r_x0, r_x0_bar)
 
     proof = (c, rs, X1b) # Where rs are multiple responses
@@ -297,24 +322,38 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
     #    random alpha.
 
     # TODO 1
+
+    # generate random variable alpha
     alpha = o.random()
+    # blind u using alpha
     u = u.pt_mul(alpha)
+    # blind u' using alpha
     u_prime = u_prime.pt_mul(alpha)
 
     # 2) Implement the "Show" protocol (p.9) for a single attribute v.
     #    Cv is a commitment to v and Cup is C_{u'} in the paper.
 
     # TODO 2
+
+    # follow the protocol in the paper
+
+    # generate two random variables, r and z1
     r = o.random()
     z1 = o.random()
 
+    # calulate u^v to calculate Cv (commitment)
     u_v = u.pt_mul(v)
+    # calculate h^z1 to calculate Cv (commitment)
     h_z1 = h.pt_mul(z1)
+    # calculate Cv, commitment to v
     Cv = u_v + h_z1
 
+    # calculate g^r to calculate Cup (C_{u'})
     g_r = g.pt_mul(r)
+    # calculate Cup, (C_{u'})
     Cup = u_prime + g_r
 
+    # generate group to return, tag
     tag = (u, Cv, Cup)
 
     # Proof or knowledge of the statement
@@ -324,6 +363,9 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
     #           V  = r * (-g) + z1 * X1 }
 
     ## TODO proof
+
+    # proof is similar to previous task
+
     w_r = o.random()
     w_z1 = o.random()
     w_v = o.random()
@@ -333,15 +375,18 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
     gi_r = (-g).pt_mul(w_r)
     X1_z1 = X1.pt_mul(w_z1)
 
+    # generate 'W' of both the Cv and Cup
     W_Cv = u_v + h_z1
     W_V = gi_r + X1_z1
-
+    # generate challenge
     c = to_challenge([u, h, g, X1, Cv, Cup, Cx0, W_Cv, W_V])
 
+    # generate all responses
     rr = (w_r - c * r) % o
     rz1 =  (w_z1 - c * z1) % o
     rv = (w_v - c * v) % o
 
+    # combine the challenge and responses to create proof
     proof = (c, rr, rz1, rv)
     return tag, proof
 
@@ -360,6 +405,9 @@ def credential_show_verify(params, issuer_params, tag, proof):
     (u, Cv, Cup) = tag
 
     ## TODO
+
+    # follow the protocol in paper
+
     u_x0 = u.pt_mul(x0)
     Cv_x1 = Cv.pt_mul(x1)
     V = (u_x0 + Cv_x1) - Cup
@@ -367,15 +415,19 @@ def credential_show_verify(params, issuer_params, tag, proof):
     Cv_c = Cv.pt_mul(c)
     u_rv = u.pt_mul(rv)
     h_rz1 = h.pt_mul(rz1)
+    # generate 'W' witness of Cv
     W_Cv = Cv_c + u_rv + h_rz1
 
     V_c = V.pt_mul(c)
     gi_rr = (-g).pt_mul(rr)
     X1_rz1 = X1.pt_mul(rz1)
+    # generate 'W' witness of V
     W_V = V_c + gi_rr + X1_rz1
 
+    # create challenge
     c_prime = to_challenge([u, h, g, X1, Cv, Cup, Cx0, W_Cv, W_V])
 
+    # check two challenges to determine verification
     return c == c_prime
 
 #####################################################
@@ -399,6 +451,10 @@ def credential_show_pseudonym(params, issuer_pub_params, u, u_prime, v, service_
     pseudonym = v * N
 
     ## TODO (use code from above and modify as necessary!)
+
+    # same as last task but added another relation to prove which is pseudonym = v * N
+
+    # below section is exactly the same as before
     alpha = o.random()
     u = u.pt_mul(alpha)
     u_prime = u_prime.pt_mul(alpha)
@@ -422,6 +478,7 @@ def credential_show_pseudonym(params, issuer_pub_params, u, u_prime, v, service_
     #           V  = r * (-g) + z1 * X1 and
     #           pseudonym = v * N = ps}
 
+    # same proof as task 3 with some additions
     w_r = o.random()
     w_z1 = o.random()
     w_v = o.random()
@@ -429,15 +486,18 @@ def credential_show_pseudonym(params, issuer_pub_params, u, u_prime, v, service_
     u_v = u.pt_mul(w_v)
     h_z1 = h.pt_mul(w_z1)
     gi_r = (-g).pt_mul(w_r)
+    # create a new calculation for the relation/verification of the pseudonym
     X1_z1 = X1.pt_mul(w_z1)
 
     W_Cv = u_v + h_z1
     W_V = gi_r + X1_z1
-
+    # generate 'W' witness for the pseudonym
     W_ps = N.pt_mul(w_v)
 
+    # included witness of pseudonym in the generation of the challenge and N attribute
     c = to_challenge([u, h, g, X1, N, Cv, Cup, Cx0, W_Cv, W_V, W_ps])
 
+    # responses remains same because v does not change
     rr = (w_r - c * r) % o
     rz1 =  (w_z1 - c * z1) % o
     rv = (w_v - c * v) % o
@@ -463,6 +523,8 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
     ## Verify the correct Show protocol and the correctness of the pseudonym
 
     # TODO (use code from above and modify as necessary!)
+
+    # similar as task 3
     (c, rr, rz1, rv) = proof
     (u, Cv, Cup) = tag
 
@@ -480,12 +542,15 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
     X1_rz1 = X1.pt_mul(rz1)
     W_V = V_c + gi_rr + X1_rz1
 
+    # calculate the reverse witness of the pseudonym
     ps_c = pseudonym.pt_mul(c)
     N_rv = N.pt_mul(rv)
     W_ps = ps_c + N_rv
 
+    # generate the verification challenge with the pseudonym witness and N attribute
     c_prime = to_challenge([u, h, g, X1, N, Cv, Cup, Cx0, W_Cv, W_V, W_ps])
 
+    # check if both challenges match and verification true
     return c == c_prime
 
 #####################################################
@@ -515,6 +580,6 @@ retailer's e-wallet and delete the pseudonym for Alice which corresponds to the 
 
 To ensure privacy, pseduonyms will have to be different for each time Alice adds money to her e-wallet; also credentials will be unique. To ensure integrity (no-double spending),
 the bank deletes the pseudonym of a transaction which has been transferred from Alice's account to another account, such that, the same transaction
-will not be verified (upon a request to spend) and thus cannot be spent again. 
+will not be verified (upon a request to spend) and thus cannot be spent again.
 
 """

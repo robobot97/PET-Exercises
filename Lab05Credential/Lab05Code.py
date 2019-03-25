@@ -484,7 +484,7 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
     N_rv = N.pt_mul(rv)
     W_ps = ps_c + N_rv
 
-    c_prime = to_challenge([u, h, g, X1, N, Cv, Cup, Cx0, W_Cv, W_V, W_ps])
+    c_prime = to_challenge([u, h, g, X1, N, Cv, Cup, Cx0, W_Cv, W_V, W_ps]) 
 
     return c == c_prime
 
